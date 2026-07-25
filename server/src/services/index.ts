@@ -4,3 +4,8 @@ export { userService, UserService } from './user.service';
 export { lostItemService, LostItemService } from './lostItem.service';
 export { foundItemService, FoundItemService } from './foundItem.service';
 export { matchEngineService, MatchEngineService } from './matchEngine.service';
+export { claimService, ClaimService } from './claim.service';
+export { trustScoreService, TrustScoreService } from './trustScore.service';
+export { notificationService, NotificationService } from './notification.service';
+export { auditLogService, AuditLogService } from './auditLog.service';
+export { adminAnalyticsService, AdminAnalyticsService } from './adminAnalytics.service';

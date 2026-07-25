@@ -7,12 +7,19 @@ export interface IVerificationAnswer {
 }
 
 export interface IClaim extends Document {
+  _id: mongoose.Types.ObjectId;
   student: mongoose.Types.ObjectId;
   lostItem: mongoose.Types.ObjectId;
   foundItem: mongoose.Types.ObjectId;
+  college: mongoose.Types.ObjectId;
   verificationAnswers: IVerificationAnswer[];
+  proofImages: string[];
   status: string;
   adminRemarks: string;
+  reviewedBy: mongoose.Types.ObjectId | null;
+  reviewedAt: Date | null;
+  recoveryTimestamp: Date | null;
+  aiMatchScore: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -48,8 +55,17 @@ const claimSchema = new Schema<IClaim>(
       ref: 'FoundItem',
       required: [true, 'Found item is required'],
     },
+    college: {
+      type: Schema.Types.ObjectId,
+      ref: 'College',
+      required: [true, 'College is required'],
+    },
     verificationAnswers: {
       type: [verificationAnswerSchema],
+      default: [],
+    },
+    proofImages: {
+      type: [String],
       default: [],
     },
     status: {
@@ -62,6 +78,23 @@ const claimSchema = new Schema<IClaim>(
       trim: true,
       default: '',
     },
+    reviewedBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    reviewedAt: {
+      type: Date,
+      default: null,
+    },
+    recoveryTimestamp: {
+      type: Date,
+      default: null,
+    },
+    aiMatchScore: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,
@@ -71,5 +104,7 @@ const claimSchema = new Schema<IClaim>(
 claimSchema.index({ student: 1 });
 claimSchema.index({ lostItem: 1, foundItem: 1 });
 claimSchema.index({ status: 1 });
+claimSchema.index({ college: 1, status: 1 });
+claimSchema.index({ college: 1, createdAt: -1 });
 
 export const Claim = mongoose.model<IClaim>('Claim', claimSchema);
