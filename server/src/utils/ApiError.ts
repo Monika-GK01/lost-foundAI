@@ -1,0 +1,40 @@
+export class ApiError extends Error {
+  public readonly statusCode: number;
+  public readonly isOperational: boolean;
+
+  constructor(statusCode: number, message: string, isOperational = true) {
+    super(message);
+    this.statusCode = statusCode;
+    this.isOperational = isOperational;
+    Object.setPrototypeOf(this, ApiError.prototype);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((Error as any).captureStackTrace) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (Error as any).captureStackTrace(this, this.constructor);
+    }
+  }
+
+  static badRequest(message = 'Bad Request'): ApiError {
+    return new ApiError(400, message);
+  }
+
+  static unauthorized(message = 'Unauthorized'): ApiError {
+    return new ApiError(401, message);
+  }
+
+  static forbidden(message = 'Forbidden'): ApiError {
+    return new ApiError(403, message);
+  }
+
+  static notFound(message = 'Resource not found'): ApiError {
+    return new ApiError(404, message);
+  }
+
+  static conflict(message = 'Resource already exists'): ApiError {
+    return new ApiError(409, message);
+  }
+
+  static internal(message = 'Internal Server Error'): ApiError {
+    return new ApiError(500, message, false);
+  }
+}
