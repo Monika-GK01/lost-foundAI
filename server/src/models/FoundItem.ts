@@ -1,7 +1,9 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import { ITEM_STATUS } from '../constants';
+import { IImageMetadata } from './LostItem';
 
 export interface IFoundItem extends Document {
+  _id: mongoose.Types.ObjectId;
   title: string;
   description: string;
   category: string;
@@ -14,6 +16,13 @@ export interface IFoundItem extends Document {
   dateFound: Date;
   status: string;
   embeddingId: string;
+  embedding: number[];
+  cloudinaryImageId: string;
+  thumbnailUrl: string;
+  optimizedImageUrl: string;
+  imageMetadata: IImageMetadata | null;
+  isDeleted: boolean;
+  deletedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -79,6 +88,37 @@ const foundItemSchema = new Schema<IFoundItem>(
       type: String,
       default: '',
     },
+    embedding: {
+      type: [Number],
+      default: [],
+      select: false,
+    },
+    cloudinaryImageId: {
+      type: String,
+      default: '',
+    },
+    thumbnailUrl: {
+      type: String,
+      default: '',
+    },
+    optimizedImageUrl: {
+      type: String,
+      default: '',
+    },
+    imageMetadata: {
+      width: { type: Number, default: 0 },
+      height: { type: Number, default: 0 },
+      format: { type: String, default: '' },
+      size: { type: Number, default: 0 },
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
@@ -89,5 +129,7 @@ foundItemSchema.index({ finder: 1, college: 1 });
 foundItemSchema.index({ college: 1, status: 1 });
 foundItemSchema.index({ title: 'text', description: 'text' });
 foundItemSchema.index({ category: 1, dateFound: -1 });
+foundItemSchema.index({ isDeleted: 1, college: 1, createdAt: -1 });
+foundItemSchema.index({ brand: 1, color: 1, category: 1 });
 
 export const FoundItem = mongoose.model<IFoundItem>('FoundItem', foundItemSchema);

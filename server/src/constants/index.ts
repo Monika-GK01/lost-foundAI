@@ -63,3 +63,32 @@ export const UPLOAD_FOLDER = {
   ITEM_IMAGES: 'campus-lost-found/items',
   COLLEGE_LOGOS: 'campus-lost-found/colleges',
 } as const;
+
+export const MATCH_WEIGHTS = {
+  IMAGE_SIMILARITY: 0.4,
+  BRAND_MATCH: 0.15,
+  COLOR_MATCH: 0.15,
+  CATEGORY_MATCH: 0.15,
+  LOCATION_MATCH: 0.05,
+  DATE_PROXIMITY: 0.1,
+} as const;
+
+export const MATCH_CONFIG = {
+  DEFAULT_TOP_K: 10,
+  MAX_TOP_K: 50,
+  SIMILARITY_THRESHOLD: 0.3,
+  DATE_PROXIMITY_DAYS: 30,
+} as const;
+
+export const ITEM_CATEGORIES = [
+  'ELECTRONICS',
+  'CLOTHING',
+  'ACCESSORIES',
+  'BOOKS',
+  'BAGS',
+  'KEYS',
+  'ID_CARDS',
+  'JEWELRY',
+  'SPORTS',
+  'OTHER',
+] as const;
