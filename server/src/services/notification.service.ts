@@ -1,8 +1,10 @@
 import mongoose from 'mongoose';
 import { notificationRepository } from '../repositories/notification.repository';
+import { userRepository } from '../repositories/user.repository';
 import { NOTIFICATION_TYPE, PAGINATION } from '../constants';
 import { INotification } from '../models';
 import { logger } from '../utils/logger';
+import { emailService } from './email.service';
 
 export interface CreateNotificationInput {
   recipient: string;
@@ -62,6 +64,8 @@ export class NotificationService {
       message: `Your claim for "${itemTitle}" has been submitted and is pending review.`,
       type: NOTIFICATION_TYPE.CLAIM_SUBMITTED,
     });
+    const user = await userRepository.findById(studentId);
+    if (user) emailService.sendClaimSubmitted(user.email, user.name, user.name, itemTitle);
   }
 
   async notifyClaimApproved(studentId: string, itemTitle: string): Promise<void> {
@@ -71,6 +75,8 @@ export class NotificationService {
       message: `Your claim for "${itemTitle}" has been approved. The item is now marked as recovered.`,
       type: NOTIFICATION_TYPE.CLAIM_APPROVED,
     });
+    const user = await userRepository.findById(studentId);
+    if (user) emailService.sendClaimApproved(user.email, user.name, itemTitle);
   }
 
   async notifyClaimRejected(studentId: string, itemTitle: string, remarks: string): Promise<void> {
@@ -80,6 +86,8 @@ export class NotificationService {
       message: `Your claim for "${itemTitle}" has been rejected.${remarks ? ` Remarks: ${remarks}` : ''}`,
       type: NOTIFICATION_TYPE.CLAIM_REJECTED,
     });
+    const user = await userRepository.findById(studentId);
+    if (user) emailService.sendClaimRejected(user.email, user.name, itemTitle, remarks);
   }
 
   async notifyItemRecovered(finderId: string, itemTitle: string): Promise<void> {
@@ -89,6 +97,8 @@ export class NotificationService {
       message: `The found item "${itemTitle}" has been claimed and recovered by its owner.`,
       type: NOTIFICATION_TYPE.ITEM_RECOVERED,
     });
+    const user = await userRepository.findById(finderId);
+    if (user) emailService.sendItemRecovered(user.email, user.name, itemTitle);
   }
 
   async notifyAdminRemarks(studentId: string, itemTitle: string, remarks: string): Promise<void> {
@@ -107,6 +117,8 @@ export class NotificationService {
       message: `A potential match (${Math.round(score * 100)}%) was found for "${lostTitle}": "${foundTitle}".`,
       type: NOTIFICATION_TYPE.ITEM_MATCH,
     });
+    const user = await userRepository.findById(userId);
+    if (user) emailService.sendMatchFound(user.email, user.name, lostTitle, score);
   }
 }
 

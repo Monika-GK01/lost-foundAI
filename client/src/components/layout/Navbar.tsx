@@ -18,10 +18,10 @@ export function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--color-border)] bg-[var(--color-surface)]/80 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+    <header role="banner" className="sticky top-0 z-40 border-b border-[var(--color-border)] bg-[var(--color-surface)]/80 backdrop-blur-md">
+      <nav role="navigation" aria-label="Main navigation" className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         <div className="flex items-center gap-3">
-          <button className="lg:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
+          <button className="lg:hidden" onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileOpen}>
             {mobileOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
           <Link to="/" className="flex items-center gap-2">
@@ -45,13 +45,13 @@ export function Navbar() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button onClick={toggle} className="rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-800" title="Toggle theme">
+          <button onClick={toggle} className="rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-800" aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}>
             {isDark ? <Sun size={18} /> : <Moon size={18} />}
           </button>
 
           {user && (
             <>
-              <Link to="/notifications" className="relative rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-800">
+              <Link to="/notifications" className="relative rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-800" aria-label="Notifications">
                 <Bell size={18} />
               </Link>
 
@@ -59,6 +59,9 @@ export function Navbar() {
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 dark:bg-primary-900/40 dark:text-primary-300"
+                  aria-label="User menu"
+                  aria-expanded={userMenuOpen}
+                  aria-haspopup="menu"
                 >
                   {getInitials(user.name)}
                 </button>
@@ -80,7 +83,7 @@ export function Navbar() {
             </>
           )}
         </div>
-      </div>
+      </nav>
     </header>
   );
 }

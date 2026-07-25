@@ -3,6 +3,8 @@ import { claimService } from '../services';
 import { AuthenticatedRequest } from '../types';
 import { asyncHandler } from '../utils/asyncHandler';
 import { sendCreated, sendOk } from '../utils/ApiResponse';
+import { generateRecoveryQR } from '../utils/qrGenerator';
+import { ApiError } from '../utils/ApiError';
 
 /**
  * POST /api/claims
@@ -116,5 +118,37 @@ export const getCollegeClaims = asyncHandler(
     );
 
     sendOk(res, 'College claims retrieved successfully', result);
+  }
+);
+
+/**
+ * GET /api/claims/:id/recovery-receipt
+ * Generates a QR recovery receipt for an approved claim.
+ */
+export const getRecoveryReceipt = asyncHandler(
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const claim = await claimService.getClaimById(req.params.id);
+
+    if (claim.status !== 'APPROVED') {
+      throw new ApiError(400, 'Recovery receipt is only available for approved claims');
+    }
+
+    const qrDataUrl = await generateRecoveryQR({
+      recoveryId: claim._id.toString(),
+      itemId: (claim.foundItem as any)?._id?.toString() || claim.foundItem?.toString() || '',
+      studentName: (claim.student as any)?.name || 'Student',
+      recoveryDate: claim.recoveryTimestamp
+        ? new Date(claim.recoveryTimestamp).toISOString().split('T')[0]
+        : new Date().toISOString().split('T')[0],
+      adminName: (claim.reviewedBy as any)?.name || 'Admin',
+      status: claim.status,
+    });
+
+    sendOk(res, 'Recovery receipt generated', {
+      qrCode: qrDataUrl,
+      recoveryId: claim._id.toString(),
+      status: claim.status,
+      recoveryDate: claim.recoveryTimestamp || claim.reviewedAt,
+    });
   }
 );

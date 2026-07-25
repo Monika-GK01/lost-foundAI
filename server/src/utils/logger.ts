@@ -5,8 +5,9 @@ const logFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.errors({ stack: true }),
   winston.format.printf((info: winston.Logform.TransformableInfo) => {
-    const { timestamp, level, message, stack } = info;
-    return `${timestamp} [${level.toUpperCase()}]: ${(stack as string) || message}`;
+    const { timestamp, level, message, stack, requestId: reqId } = info;
+    const reqPart = reqId ? ` [${reqId}]` : '';
+    return `${timestamp} [${level.toUpperCase()}]${reqPart}: ${(stack as string) || message}`;
   })
 );
 

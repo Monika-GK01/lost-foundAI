@@ -5,3 +5,4 @@ export { validate } from './validate';
 export { notFound } from './notFound';
 export { errorHandler } from './errorHandler';
 export { globalRateLimiter, authRateLimiter } from './rateLimiter';
+export { requestId } from './requestId';

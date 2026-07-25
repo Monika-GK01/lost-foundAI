@@ -139,6 +139,7 @@ const lostItemSchema = new Schema<ILostItem>(
 
 lostItemSchema.index({ owner: 1, college: 1 });
 lostItemSchema.index({ college: 1, status: 1 });
+lostItemSchema.index({ college: 1, status: 1, createdAt: -1 });
 lostItemSchema.index({ title: 'text', description: 'text' });
 lostItemSchema.index({ category: 1, dateLost: -1 });
 lostItemSchema.index({ isDeleted: 1, college: 1, createdAt: -1 });

@@ -26,6 +26,13 @@ const envSchema = z.object({
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(100),
 
   AI_SERVICE_URL: z.string().url().default('http://localhost:8000'),
+
+  // SMTP / Email (optional — emails disabled if not configured)
+  SMTP_HOST: z.string().default(''),
+  SMTP_PORT: z.coerce.number().default(587),
+  SMTP_USER: z.string().default(''),
+  SMTP_PASS: z.string().default(''),
+  EMAIL_FROM: z.string().default('noreply@campuslostfound.io'),
 });
 
 const parsed = envSchema.safeParse(process.env);

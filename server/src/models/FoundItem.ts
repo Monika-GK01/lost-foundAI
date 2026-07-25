@@ -127,6 +127,7 @@ const foundItemSchema = new Schema<IFoundItem>(
 
 foundItemSchema.index({ finder: 1, college: 1 });
 foundItemSchema.index({ college: 1, status: 1 });
+foundItemSchema.index({ college: 1, status: 1, createdAt: -1 });
 foundItemSchema.index({ title: 'text', description: 'text' });
 foundItemSchema.index({ category: 1, dateFound: -1 });
 foundItemSchema.index({ isDeleted: 1, college: 1, createdAt: -1 });

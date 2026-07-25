@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import { foundItemService } from '../services';
+import { checkFoundItemDuplicates } from '../services/duplicateDetection.service';
 import { AuthenticatedRequest } from '../types';
 import { asyncHandler } from '../utils/asyncHandler';
 import { sendCreated, sendOk, sendNoContent } from '../utils/ApiResponse';
@@ -75,5 +76,20 @@ export const deleteFoundItem = asyncHandler(
       req.user!.role
     );
     sendNoContent(res, 'Found item deleted successfully');
+  }
+);
+
+export const checkDuplicates = asyncHandler(
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const { title, category, brand, color, dateFound } = req.body;
+    const duplicates = await checkFoundItemDuplicates({
+      title,
+      category,
+      brand,
+      color,
+      date: dateFound,
+      collegeId: req.user!.college,
+    });
+    sendOk(res, 'Duplicate check complete', { duplicates, hasDuplicates: duplicates.length > 0 });
   }
 );

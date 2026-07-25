@@ -45,3 +45,10 @@
     @apply rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-card;
   }
 }
+
+@layer utilities {
+  /* Ensure visible focus indicators for keyboard navigation */
+  *:focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary-500;
+  }
+}

@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import { lostItemService } from '../services';
+import { checkLostItemDuplicates } from '../services/duplicateDetection.service';
 import { AuthenticatedRequest } from '../types';
 import { asyncHandler } from '../utils/asyncHandler';
 import { sendCreated, sendOk, sendNoContent } from '../utils/ApiResponse';
@@ -89,5 +90,20 @@ export const getLostItemMatches = asyncHandler(
         scores: m.scores,
       })),
     });
+  }
+);
+
+export const checkDuplicates = asyncHandler(
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const { title, category, brand, color, dateLost } = req.body;
+    const duplicates = await checkLostItemDuplicates({
+      title,
+      category,
+      brand,
+      color,
+      date: dateLost,
+      collegeId: req.user!.college,
+    });
+    sendOk(res, 'Duplicate check complete', { duplicates, hasDuplicates: duplicates.length > 0 });
   }
 );

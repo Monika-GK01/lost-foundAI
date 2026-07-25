@@ -1,12 +1,17 @@
 import express, { Application } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import mongoSanitize from 'express-mongo-sanitize';
+import mongoose from 'mongoose';
+import axios from 'axios';
 import { env } from './config/env';
 import routes from './routes';
-import { notFound, errorHandler, globalRateLimiter } from './middlewares';
+import { notFound, errorHandler, globalRateLimiter, requestId } from './middlewares';
 import { logger } from './utils/logger';
+import { swaggerSpec } from './config/swagger';
+import swaggerUi from 'swagger-ui-express';
 
 const app: Application = express();
 
@@ -17,9 +22,15 @@ app.use(
     origin: env.CLIENT_URL,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],
   })
 );
+
+// Compression
+app.use(compression());
+
+// Request ID
+app.use(requestId);
 
 // Rate limiting
 app.use(globalRateLimiter);
@@ -34,12 +45,20 @@ app.use(mongoSanitize());
 
 // Request logging
 app.use((req, _res, next) => {
-  logger.info(`${req.method} ${req.originalUrl}`);
+  logger.info(`${req.method} ${req.originalUrl}`, { requestId: req.requestId });
   next();
 });
 
 // Health check
-app.get('/api/health', (_req, res) => {
+app.get('/api/health', async (_req, res) => {
+  const mongoStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+  let aiStatus = 'unknown';
+  try {
+    await axios.get(`${env.AI_SERVICE_URL}/health`, { timeout: 3000 });
+    aiStatus = 'reachable';
+  } catch {
+    aiStatus = 'unreachable';
+  }
   res.status(200).json({
     success: true,
     message: 'Server is running',
@@ -47,12 +66,18 @@ app.get('/api/health', (_req, res) => {
       status: 'healthy',
       timestamp: new Date().toISOString(),
       environment: env.NODE_ENV,
+      uptime: process.uptime(),
+      mongo: mongoStatus,
+      aiService: aiStatus,
     },
   });
 });
 
 // API routes
 app.use('/api', routes);
+
+// Swagger API docs
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { customSiteTitle: 'Campus LostFoundAI API' }));
 
 // 404 handler
 app.use(notFound);
