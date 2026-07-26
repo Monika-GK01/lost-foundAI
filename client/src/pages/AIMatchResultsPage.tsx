@@ -1,13 +1,13 @@
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Sparkles, Image, Tag, Palette, FolderOpen, MapPin, Calendar } from 'lucide-react';
+import { ArrowLeft, Sparkles, Image, Tag, Palette, FolderOpen, MapPin, Calendar, Type } from 'lucide-react';
 import { lostItemsApi } from '@/lib/services';
 import { Skeleton } from '@/components/ui/Loading';
 import { EmptyState } from '@/components/ui/EmptyState';
 import type { MatchResult } from '@/types';
 
 function ScoreBar({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
-  const pct = Math.round(value);
+  const pct = Math.round(value * 100);
   const color = pct >= 70 ? 'bg-green-500' : pct >= 40 ? 'bg-yellow-500' : 'bg-gray-400';
   return (
     <div className="flex items-center gap-2">
@@ -75,16 +75,16 @@ export default function AIMatchResultsPage() {
                     </div>
                     <div className="text-right">
                       <div className={`inline-flex flex-col items-center rounded-xl px-3 py-2 ${
-                        match.scores.overallScore >= 70 ? 'bg-green-100 dark:bg-green-900/30' :
-                        match.scores.overallScore >= 40 ? 'bg-yellow-100 dark:bg-yellow-900/30' :
+                        match.scores.overallScore >= 0.7 ? 'bg-green-100 dark:bg-green-900/30' :
+                        match.scores.overallScore >= 0.4 ? 'bg-yellow-100 dark:bg-yellow-900/30' :
                         'bg-gray-100 dark:bg-gray-800'
                       }`}>
                         <span className={`text-lg font-bold ${
-                          match.scores.overallScore >= 70 ? 'text-green-700 dark:text-green-300' :
-                          match.scores.overallScore >= 40 ? 'text-yellow-700 dark:text-yellow-300' :
+                          match.scores.overallScore >= 0.7 ? 'text-green-700 dark:text-green-300' :
+                          match.scores.overallScore >= 0.4 ? 'text-yellow-700 dark:text-yellow-300' :
                           'text-gray-700 dark:text-gray-300'
                         }`}>
-                          {Math.round(match.scores.overallScore)}%
+                          {Math.round(match.scores.overallScore * 100)}%
                         </span>
                         <span className="text-[10px] text-[var(--color-text-secondary)]">Confidence</span>
                       </div>
@@ -94,6 +94,7 @@ export default function AIMatchResultsPage() {
                   {/* Detailed score breakdown */}
                   <div className="mt-3 space-y-1.5 rounded-lg bg-gray-50 p-3 dark:bg-gray-800/50">
                     <ScoreBar label="Image" value={match.scores.imageScore ?? 0} icon={<Image size={12} />} />
+                    <ScoreBar label="Title" value={match.scores.titleScore ?? 0} icon={<Type size={12} />} />
                     <ScoreBar label="Brand" value={match.scores.brandScore ?? 0} icon={<Tag size={12} />} />
                     <ScoreBar label="Category" value={match.scores.categoryScore ?? 0} icon={<FolderOpen size={12} />} />
                     <ScoreBar label="Color" value={match.scores.colorScore ?? 0} icon={<Palette size={12} />} />

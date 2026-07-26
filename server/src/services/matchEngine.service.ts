@@ -4,6 +4,7 @@ import { logger } from '../utils/logger';
 
 export interface MatchScoreBreakdown {
   imageScore: number;
+  titleScore: number;
   brandScore: number;
   colorScore: number;
   categoryScore: number;
@@ -19,12 +20,14 @@ export interface RankedMatch {
 }
 
 export interface LostItemData {
+  title: string;
+  description?: string;
   category: string;
   brand: string;
   color: string;
   location: string;
   dateLost: Date;
-  embedding: number[];
+  embedding?: number[];
 }
 
 /**
@@ -40,22 +43,39 @@ export class MatchEngineService {
     foundItem: IFoundItem,
     imageSimilarity: number
   ): MatchScoreBreakdown {
+    const titleScore = this.calculateTitleScore(lostItem.title, lostItem.description, foundItem.title, foundItem.description);
     const brandScore = this.calculateBrandScore(lostItem.brand, foundItem.brand);
     const colorScore = this.calculateColorScore(lostItem.color, foundItem.color);
     const categoryScore = this.calculateCategoryScore(lostItem.category, foundItem.category);
     const locationScore = this.calculateLocationScore(lostItem.location, foundItem.location);
     const dateScore = this.calculateDateProximityScore(lostItem.dateLost, foundItem.dateFound);
 
+    // When no image similarity is available, redistribute weight to metadata signals
+    const hasImage = imageSimilarity > 0;
+    const weights = hasImage
+      ? MATCH_WEIGHTS
+      : {
+          IMAGE_SIMILARITY: 0,
+          TITLE_MATCH: 0.30,
+          BRAND_MATCH: 0.20,
+          COLOR_MATCH: 0.20,
+          CATEGORY_MATCH: 0.15,
+          LOCATION_MATCH: 0.05,
+          DATE_PROXIMITY: 0.10,
+        };
+
     const overallScore =
-      imageSimilarity * MATCH_WEIGHTS.IMAGE_SIMILARITY +
-      brandScore * MATCH_WEIGHTS.BRAND_MATCH +
-      colorScore * MATCH_WEIGHTS.COLOR_MATCH +
-      categoryScore * MATCH_WEIGHTS.CATEGORY_MATCH +
-      locationScore * MATCH_WEIGHTS.LOCATION_MATCH +
-      dateScore * MATCH_WEIGHTS.DATE_PROXIMITY;
+      imageSimilarity * weights.IMAGE_SIMILARITY +
+      titleScore * weights.TITLE_MATCH +
+      brandScore * weights.BRAND_MATCH +
+      colorScore * weights.COLOR_MATCH +
+      categoryScore * weights.CATEGORY_MATCH +
+      locationScore * weights.LOCATION_MATCH +
+      dateScore * weights.DATE_PROXIMITY;
 
     const explanation = this.buildExplanation(
       imageSimilarity,
+      titleScore,
       brandScore,
       colorScore,
       categoryScore,
@@ -65,6 +85,7 @@ export class MatchEngineService {
 
     return {
       imageScore: Math.round(imageSimilarity * 100) / 100,
+      titleScore: Math.round(titleScore * 100) / 100,
       brandScore: Math.round(brandScore * 100) / 100,
       colorScore: Math.round(colorScore * 100) / 100,
       categoryScore: Math.round(categoryScore * 100) / 100,
@@ -89,8 +110,46 @@ export class MatchEngineService {
       return { foundItem, scores };
     });
 
-    ranked.sort((a, b) => b.scores.overallScore - a.scores.overallScore);
-    return ranked.slice(0, MATCH_CONFIG.DEFAULT_TOP_K);
+    // Filter out zero-score matches and sort by score descending
+    return ranked
+      .filter((m) => m.scores.overallScore > 0)
+      .sort((a, b) => b.scores.overallScore - a.scores.overallScore)
+      .slice(0, MATCH_CONFIG.DEFAULT_TOP_K);
+  }
+
+  private calculateTitleScore(
+    lostTitle: string,
+    lostDesc: string | undefined,
+    foundTitle: string,
+    foundDesc: string | undefined
+  ): number {
+    if (!lostTitle || !foundTitle) return 0;
+
+    const titleSim = this.tokenSimilarity(lostTitle, foundTitle);
+
+    // Also check description overlap if available
+    let descBonus = 0;
+    if (lostDesc && foundDesc) {
+      descBonus = this.tokenSimilarity(lostDesc, foundDesc) * 0.3;
+    }
+
+    return Math.min(1, titleSim * 0.7 + descBonus + (titleSim === 1 ? 0.3 : 0));
+  }
+
+  /**
+   * Token-based similarity: word overlap ratio between two strings.
+   */
+  private tokenSimilarity(a: string, b: string): number {
+    const wordsA = a.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean);
+    const wordsB = b.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean);
+
+    if (wordsA.length === 0 || wordsB.length === 0) return 0;
+
+    const setB = new Set(wordsB);
+    const overlap = wordsA.filter((w) => setB.has(w)).length;
+
+    // Jaccard-like: overlap / min(len) to favor subset matches
+    return overlap / Math.min(wordsA.length, wordsB.length);
   }
 
   private calculateBrandScore(lostBrand: string, foundBrand: string): number {
@@ -149,6 +208,7 @@ export class MatchEngineService {
 
   private buildExplanation(
     imageScore: number,
+    titleScore: number,
     brandScore: number,
     colorScore: number,
     categoryScore: number,
@@ -159,7 +219,9 @@ export class MatchEngineService {
 
     if (imageScore > 0.7) parts.push('Strong visual similarity');
     else if (imageScore > 0.4) parts.push('Moderate visual similarity');
-    else parts.push('Low visual similarity');
+
+    if (titleScore > 0.7) parts.push('Highly similar title/description');
+    else if (titleScore > 0.4) parts.push('Partially similar title');
 
     if (brandScore === 1) parts.push('Exact brand match');
     else if (brandScore > 0) parts.push('Partial brand match');

@@ -174,7 +174,8 @@ export class LostItemService {
 
   /**
    * Find matching found items for a lost item.
-   * Full pipeline: load embedding → get candidates → AI match → weighted scoring.
+   * Pipeline: load item → get candidates → AI image match (optional) → weighted metadata scoring.
+   * Works with OR without image embeddings — falls back to metadata-only matching.
    */
   async findMatches(lostItemId: string): Promise<RankedMatch[]> {
     const lostItem = await lostItemRepository.findByIdWithEmbedding(lostItemId);
@@ -182,47 +183,54 @@ export class LostItemService {
       throw ApiError.notFound('Lost item not found');
     }
 
-    if (!lostItem.embedding || lostItem.embedding.length === 0) {
-      throw ApiError.badRequest('This item has no embedding. Upload an image first.');
-    }
+    const hasEmbedding = lostItem.embedding && lostItem.embedding.length > 0;
 
-    // Get open found items in the same college with embeddings
+    // Get all open found items in the same college
     const foundItems = await foundItemRepository.findOpenWithEmbeddings(
       lostItem.college.toString()
+    );
+
+    logger.info(
+      `[MATCH] Lost item ${lostItemId} ("${lostItem.title}") | embedding=${hasEmbedding} | found candidates=${foundItems.length}`
     );
 
     if (foundItems.length === 0) {
       return [];
     }
 
-    // Build candidates for AI matching
-    const candidates: MatchCandidate[] = foundItems
-      .filter((fi) => fi.embedding && fi.embedding.length > 0)
-      .map((fi) => ({
-        id: fi._id.toString(),
-        embedding: fi.embedding,
-      }));
-
-    if (candidates.length === 0) {
-      return [];
-    }
-
-    // Call AI service for image similarity
+    // Attempt AI image similarity if both sides have embeddings
     let imageSimilarities = new Map<string, number>();
-    try {
-      const aiMatches = await findMatches(
-        lostItem.embedding,
-        candidates,
-        MATCH_CONFIG.DEFAULT_TOP_K,
-        MATCH_CONFIG.SIMILARITY_THRESHOLD
-      );
-      imageSimilarities = new Map(aiMatches.map((m) => [m.id, m.similarity]));
-    } catch (error) {
-      logger.warn('AI matching unavailable, using metadata-only scoring');
+    if (hasEmbedding) {
+      const candidates: MatchCandidate[] = foundItems
+        .filter((fi) => fi.embedding && fi.embedding.length > 0)
+        .map((fi) => ({
+          id: fi._id.toString(),
+          embedding: fi.embedding,
+        }));
+
+      if (candidates.length > 0) {
+        try {
+          const aiMatches = await findMatches(
+            lostItem.embedding!,
+            candidates,
+            MATCH_CONFIG.DEFAULT_TOP_K,
+            MATCH_CONFIG.SIMILARITY_THRESHOLD
+          );
+          imageSimilarities = new Map(aiMatches.map((m) => [m.id, m.similarity]));
+          logger.info(`[MATCH] AI image matching returned ${aiMatches.length} similarities`);
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'unknown';
+          logger.warn(`[MATCH] AI service unavailable (${msg}), using metadata-only scoring`);
+        }
+      }
+    } else {
+      logger.info('[MATCH] No embedding on lost item, using metadata-only matching');
     }
 
-    // Apply weighted match engine
+    // Apply weighted match engine (works with or without image similarities)
     const lostItemData: LostItemData = {
+      title: lostItem.title,
+      description: lostItem.description,
       category: lostItem.category,
       brand: lostItem.brand,
       color: lostItem.color,
@@ -231,7 +239,11 @@ export class LostItemService {
       embedding: lostItem.embedding,
     };
 
-    return matchEngineService.rankMatches(lostItemData, foundItems, imageSimilarities);
+    const results = matchEngineService.rankMatches(lostItemData, foundItems, imageSimilarities);
+
+    logger.info(`[MATCH] Final ranked matches: ${results.length} (top score: ${results[0]?.scores.overallScore ?? 0})`);
+
+    return results;
   }
 }
 

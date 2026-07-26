@@ -107,6 +107,7 @@ export interface MatchResult {
   foundItem: FoundItem;
   scores: {
     imageScore: number;
+    titleScore: number;
     brandScore: number;
     colorScore: number;
     categoryScore: number;
