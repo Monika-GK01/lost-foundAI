@@ -10,7 +10,6 @@ const cookieOptions = {
   httpOnly: true,
   secure: env.COOKIE_SECURE,
   sameSite: env.COOKIE_SAMESITE,
-  domain: env.COOKIE_DOMAIN,
   path: '/',
 };
 
