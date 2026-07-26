@@ -6,17 +6,24 @@ import cookieParser from 'cookie-parser';
 import mongoSanitize from 'express-mongo-sanitize';
 import mongoose from 'mongoose';
 import axios from 'axios';
+import swaggerUi from 'swagger-ui-express';
+
 import { env } from './config/env';
 import routes from './routes';
-import { notFound, errorHandler, globalRateLimiter, requestId } from './middlewares';
+import {
+  notFound,
+  errorHandler,
+  globalRateLimiter,
+  requestId,
+} from './middlewares';
 import { logger } from './utils/logger';
 import { swaggerSpec } from './config/swagger';
-import swaggerUi from 'swagger-ui-express';
 
 const app: Application = express();
 
 // Security middleware
 app.use(helmet());
+
 app.use(
   cors({
     origin: env.CLIENT_URL,
@@ -40,25 +47,54 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
-// Sanitize input against NoSQL injection
+// Protect against NoSQL injection
 app.use(mongoSanitize());
 
 // Request logging
 app.use((req, _res, next) => {
-  logger.info(`${req.method} ${req.originalUrl}`, { requestId: req.requestId });
+  logger.info(`${req.method} ${req.originalUrl}`, {
+    requestId: req.requestId,
+  });
   next();
 });
 
-// Health check
+/**
+ * Root Route
+ */
+app.get('/', (_req, res) => {
+  res.status(200).json({
+    success: true,
+    message: '🚀 Campus LostFoundAI Backend is running!',
+    version: '1.0.0',
+    environment: env.NODE_ENV,
+    endpoints: {
+      health: '/api/health',
+      docs: '/api/docs',
+      api: '/api',
+    },
+  });
+});
+
+/**
+ * Health Check
+ */
 app.get('/api/health', async (_req, res) => {
-  const mongoStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+  const mongoStatus =
+    mongoose.connection.readyState === 1
+      ? 'connected'
+      : 'disconnected';
+
   let aiStatus = 'unknown';
+
   try {
-    await axios.get(`${env.AI_SERVICE_URL}/health`, { timeout: 3000 });
+    await axios.get(`${env.AI_SERVICE_URL}/health`, {
+      timeout: 3000,
+    });
     aiStatus = 'reachable';
   } catch {
     aiStatus = 'unreachable';
   }
+
   res.status(200).json({
     success: true,
     message: 'Server is running',
@@ -73,16 +109,30 @@ app.get('/api/health', async (_req, res) => {
   });
 });
 
-// API routes
+/**
+ * API Routes
+ */
 app.use('/api', routes);
 
-// Swagger API docs
-app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { customSiteTitle: 'Campus LostFoundAI API' }));
+/**
+ * Swagger Documentation
+ */
+app.use(
+  '/api/docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    customSiteTitle: 'Campus LostFoundAI API',
+  })
+);
 
-// 404 handler
+/**
+ * 404 Handler
+ */
 app.use(notFound);
 
-// Global error handler
+/**
+ * Global Error Handler
+ */
 app.use(errorHandler);
 
 export default app;
