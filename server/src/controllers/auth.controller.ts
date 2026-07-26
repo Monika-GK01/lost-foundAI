@@ -9,7 +9,7 @@ import { COOKIE_NAMES } from '../constants';
 const cookieOptions = {
   httpOnly: true,
   secure: env.COOKIE_SECURE,
-  sameSite: 'strict' as const,
+  sameSite: env.COOKIE_SAMESITE,
   domain: env.COOKIE_DOMAIN,
   path: '/',
 };

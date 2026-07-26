@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { authApi } from '@/lib/services';
+import { resetAuthState } from '@/lib/api';
 import type { User } from '@/types';
 
 interface AuthContextValue {
@@ -38,6 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     const res = await authApi.login({ email, password });
     if (res.data.success && res.data.data) {
+      resetAuthState();
       setUser(res.data.data);
     }
   };
@@ -45,6 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (data: { name: string; email: string; password: string; college: string; role?: string; department?: string; year?: number; rollNumber?: string; phone?: string }) => {
     const res = await authApi.register(data);
     if (res.data.success && res.data.data) {
+      resetAuthState();
       setUser(res.data.data);
     }
   };

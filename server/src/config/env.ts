@@ -17,6 +17,7 @@ const envSchema = z.object({
 
   COOKIE_DOMAIN: z.string().default('localhost'),
   COOKIE_SECURE: z.coerce.boolean().default(false),
+  COOKIE_SAMESITE: z.enum(['strict', 'lax', 'none']).default('strict'),
 
   CLOUDINARY_CLOUD_NAME: z.string().default(''),
   CLOUDINARY_API_KEY: z.string().default(''),

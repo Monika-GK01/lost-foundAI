@@ -22,6 +22,7 @@ const collegeSchema = new Schema<ICollege>(
       trim: true,
       maxlength: [200, 'College name cannot exceed 200 characters'],
     },
+
     collegeCode: {
       type: String,
       required: [true, 'College code is required'],
@@ -30,6 +31,7 @@ const collegeSchema = new Schema<ICollege>(
       uppercase: true,
       maxlength: [20, 'College code cannot exceed 20 characters'],
     },
+
     email: {
       type: String,
       required: [true, 'College email is required'],
@@ -37,24 +39,29 @@ const collegeSchema = new Schema<ICollege>(
       lowercase: true,
       match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email'],
     },
+
     phone: {
       type: String,
       trim: true,
       maxlength: [20, 'Phone number cannot exceed 20 characters'],
     },
+
     logo: {
       type: String,
       default: '',
     },
+
     address: {
       type: String,
       trim: true,
       maxlength: [500, 'Address cannot exceed 500 characters'],
     },
+
     website: {
       type: String,
       trim: true,
     },
+
     status: {
       type: String,
       enum: Object.values(COLLEGE_STATUS),
@@ -66,7 +73,7 @@ const collegeSchema = new Schema<ICollege>(
   }
 );
 
-collegeSchema.index({ collegeCode: 1 });
+// Indexes
 collegeSchema.index({ name: 'text' });
 
 export const College = mongoose.model<ICollege>('College', collegeSchema);

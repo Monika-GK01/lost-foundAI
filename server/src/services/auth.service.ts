@@ -1,10 +1,13 @@
-import { userRepository } from '../repositories';
+import { userRepository, collegeRepository } from '../repositories';
 import { ApiError } from '../utils/ApiError';
 import { hashPassword, comparePassword } from '../utils/password';
-import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/token';
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyRefreshToken,
+} from '../utils/token';
 import { JwtPayload } from '../types';
 import { IUser } from '../models';
-import mongoose from 'mongoose';
 
 export interface RegisterInput {
   name: string;
@@ -29,10 +32,22 @@ export interface AuthTokens {
 }
 
 export class AuthService {
-  async register(input: RegisterInput): Promise<{ user: IUser; tokens: AuthTokens }> {
+  async register(
+    input: RegisterInput
+  ): Promise<{ user: IUser; tokens: AuthTokens }> {
     const emailExists = await userRepository.emailExists(input.email);
+
     if (emailExists) {
       throw ApiError.conflict('Email already registered');
+    }
+
+    // Find college using college code entered by user (MBU, VIT, etc.)
+    const college = await collegeRepository.findByCode(input.college);
+
+    if (!college) {
+      throw ApiError.badRequest(
+        `College '${input.college}' not found. Please contact administrator.`
+      );
     }
 
     const hashedPassword = await hashPassword(input.password);
@@ -41,7 +56,7 @@ export class AuthService {
       name: input.name,
       email: input.email,
       password: hashedPassword,
-      college: new mongoose.Types.ObjectId(input.college),
+      college: college._id,
       role: input.role || 'STUDENT',
       department: input.department,
       year: input.year,
@@ -50,13 +65,23 @@ export class AuthService {
     });
 
     const tokens = await this.generateTokens(user);
-    await userRepository.updateRefreshToken(user._id.toString(), tokens.refreshToken);
 
-    return { user, tokens };
+    await userRepository.updateRefreshToken(
+      user._id.toString(),
+      tokens.refreshToken
+    );
+
+    return {
+      user,
+      tokens,
+    };
   }
 
-  async login(input: LoginInput): Promise<{ user: IUser; tokens: AuthTokens }> {
+  async login(
+    input: LoginInput
+  ): Promise<{ user: IUser; tokens: AuthTokens }> {
     const user = await userRepository.findByEmail(input.email);
+
     if (!user) {
       throw ApiError.unauthorized('Invalid email or password');
     }
@@ -65,16 +90,28 @@ export class AuthService {
       throw ApiError.forbidden('Account is deactivated');
     }
 
-    const isPasswordValid = await comparePassword(input.password, user.password);
-    if (!isPasswordValid) {
+    const validPassword = await comparePassword(
+      input.password,
+      user.password
+    );
+
+    if (!validPassword) {
       throw ApiError.unauthorized('Invalid email or password');
     }
 
     const tokens = await this.generateTokens(user);
-    await userRepository.updateRefreshToken(user._id.toString(), tokens.refreshToken);
+
+    await userRepository.updateRefreshToken(
+      user._id.toString(),
+      tokens.refreshToken
+    );
+
     await userRepository.updateLastLogin(user._id.toString());
 
-    return { user, tokens };
+    return {
+      user,
+      tokens,
+    };
   }
 
   async logout(userId: string): Promise<void> {
@@ -83,6 +120,7 @@ export class AuthService {
 
   async refresh(refreshToken: string): Promise<AuthTokens> {
     let payload: JwtPayload;
+
     try {
       payload = verifyRefreshToken(refreshToken);
     } catch {
@@ -90,6 +128,7 @@ export class AuthService {
     }
 
     const user = await userRepository.findByIdWithPassword(payload.userId);
+
     if (!user || user.refreshToken !== refreshToken) {
       throw ApiError.unauthorized('Invalid refresh token');
     }
@@ -99,7 +138,11 @@ export class AuthService {
     }
 
     const tokens = await this.generateTokens(user);
-    await userRepository.updateRefreshToken(user._id.toString(), tokens.refreshToken);
+
+    await userRepository.updateRefreshToken(
+      user._id.toString(),
+      tokens.refreshToken
+    );
 
     return tokens;
   }

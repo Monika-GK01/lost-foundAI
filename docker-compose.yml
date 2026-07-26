@@ -61,6 +61,7 @@ services:
       - JWT_REFRESH_EXPIRY=7d
       - COOKIE_DOMAIN=localhost
       - COOKIE_SECURE=false
+      - COOKIE_SAMESITE=strict
       - AI_SERVICE_URL=http://ai-service:8000
       - CLOUDINARY_CLOUD_NAME=
       - CLOUDINARY_API_KEY=

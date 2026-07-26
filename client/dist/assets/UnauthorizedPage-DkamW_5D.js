@@ -1,6 +1,0 @@
-import{c as t,j as e,L as s}from"./index-CmW1sjkh.js";/**
- * @license lucide-react v0.395.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */const a=t("ShieldAlert",[["path",{d:"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z",key:"oel41y"}],["path",{d:"M12 8v4",key:"1got3b"}],["path",{d:"M12 16h.01",key:"1drbdi"}]]);function c(){return e.jsxs("div",{className:"flex min-h-screen flex-col items-center justify-center px-4 text-center",children:[e.jsx("div",{className:"mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30",children:e.jsx(a,{size:32,className:"text-red-600"})}),e.jsx("h1",{className:"text-5xl font-bold text-red-600",children:"403"}),e.jsx("h2",{className:"mt-4 text-2xl font-semibold",children:"Access Denied"}),e.jsx("p",{className:"mt-2 max-w-md text-[var(--color-text-secondary)]",children:"You don't have permission to access this page. Contact your administrator if you believe this is an error."}),e.jsx(s,{to:"/dashboard",className:"btn-primary mt-8",children:"Go to Dashboard"})]})}export{c as default};
