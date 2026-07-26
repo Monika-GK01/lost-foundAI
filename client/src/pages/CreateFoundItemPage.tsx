@@ -64,7 +64,9 @@ export default function CreateFoundItemPage() {
     if (data.color) formData.append('color', data.color);
     formData.append('location', data.location);
     formData.append('dateFound', data.dateFound);
-    images.forEach((img) => formData.append('images', img));
+    if (images.length > 0) {
+  formData.append('image', images[0]);
+}
     mutation.mutate(formData);
   };
 

@@ -66,7 +66,9 @@ export default function CreateLostItemPage() {
     formData.append('location', data.location);
     formData.append('dateLost', data.dateLost);
     if (data.reward) formData.append('reward', data.reward);
-    images.forEach((img) => formData.append('images', img));
+    if (images.length > 0) {
+  formData.append('image', images[0]);
+}
     mutation.mutate(formData);
   };
 
