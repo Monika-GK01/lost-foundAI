@@ -8,7 +8,17 @@ interface AuthContextValue {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (data: { name: string; email: string; password: string; college: string; role?: string; department?: string; year?: number; rollNumber?: string; phone?: string }) => Promise<void>;
+  register: (data: {
+    name: string;
+    email: string;
+    password: string;
+    college: string;
+    role?: string;
+    department?: string;
+    year?: number;
+    rollNumber?: string;
+    phone?: string;
+  }) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -22,6 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchUser = useCallback(async () => {
     try {
       const res = await authApi.me();
+
       if (res.data.success && res.data.data) {
         setUser(res.data.data);
       }
@@ -38,17 +49,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     const res = await authApi.login({ email, password });
+
     if (res.data.success && res.data.data) {
       resetAuthState();
-      setUser(res.data.data);
+
+      // FIX: backend returns { user, accessToken }
+      setUser(res.data.data.user);
     }
   };
 
-  const register = async (data: { name: string; email: string; password: string; college: string; role?: string; department?: string; year?: number; rollNumber?: string; phone?: string }) => {
+  const register = async (data: {
+    name: string;
+    email: string;
+    password: string;
+    college: string;
+    role?: string;
+    department?: string;
+    year?: number;
+    rollNumber?: string;
+    phone?: string;
+  }) => {
     const res = await authApi.register(data);
+
     if (res.data.success && res.data.data) {
       resetAuthState();
-      setUser(res.data.data);
+
+      // FIX: backend returns { user, accessToken }
+      setUser(res.data.data.user);
     }
   };
 
@@ -63,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshUser = async () => {
     try {
       const res = await authApi.me();
+
       if (res.data.success && res.data.data) {
         setUser(res.data.data);
       }
@@ -90,6 +118,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within AuthProvider');
+
+  if (!context) {
+    throw new Error('useAuth must be used within AuthProvider');
+  }
+
   return context;
 }
