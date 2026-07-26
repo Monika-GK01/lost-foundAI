@@ -4,12 +4,35 @@ import type { ApiResponse, User, LostItem, FoundItem, Claim, Notification, Match
 // ─── Auth ───────────────────────────────────────────────────────────────
 export const authApi = {
   login: (data: { email: string; password: string }) =>
-    api.post<ApiResponse<User>>('/auth/login', data),
-  register: (data: { name: string; email: string; password: string; college: string; role?: string; department?: string; year?: number; rollNumber?: string; phone?: string }) =>
-    api.post<ApiResponse<User>>('/auth/register', data),
-  logout: () => api.post<ApiResponse>('/auth/logout'),
-  refresh: () => api.post<ApiResponse>('/auth/refresh'),
-  me: () => api.get<ApiResponse<User>>('/users/me'),
+    api.post<ApiResponse<{ user: User; accessToken: string }>>(
+      '/auth/login',
+      data
+    ),
+
+  register: (data: {
+    name: string;
+    email: string;
+    password: string;
+    college: string;
+    role?: string;
+    department?: string;
+    year?: number;
+    rollNumber?: string;
+    phone?: string;
+  }) =>
+    api.post<ApiResponse<{ user: User; accessToken: string }>>(
+      '/auth/register',
+      data
+    ),
+
+  logout: () =>
+    api.post<ApiResponse>('/auth/logout'),
+
+  refresh: () =>
+    api.post<ApiResponse<{ accessToken: string }>>('/auth/refresh'),
+
+  me: () =>
+    api.get<ApiResponse<User>>('/users/me'),
 };
 
 // ─── Lost Items ─────────────────────────────────────────────────────────

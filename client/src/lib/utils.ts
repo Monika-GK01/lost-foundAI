@@ -21,11 +21,15 @@ export function timeAgo(date: string | Date): string {
   return formatDate(date);
 }
 
-export function getInitials(name: string): string {
+export function getInitials(name?: string): string {
+  if (!name) return "?";
+
   return name
-    .split(' ')
+    .trim()
+    .split(" ")
+    .filter(Boolean)
     .map((n) => n[0])
-    .join('')
+    .join("")
     .toUpperCase()
     .slice(0, 2);
 }

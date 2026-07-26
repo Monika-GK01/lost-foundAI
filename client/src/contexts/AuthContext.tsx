@@ -47,37 +47,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     fetchUser();
   }, [fetchUser]);
 
-  const login = async (email: string, password: string) => {
-    const res = await authApi.login({ email, password });
+const login = async (email: string, password: string) => {
+  const res = await authApi.login({ email, password });
 
-    if (res.data.success && res.data.data) {
-      resetAuthState();
+  if (res.data.success && res.data.data) {
+    resetAuthState();
+    setUser(res.data.data.user);
+  }
+};
 
-      // FIX: backend returns { user, accessToken }
-      setUser(res.data.data.user);
-    }
-  };
 
-  const register = async (data: {
-    name: string;
-    email: string;
-    password: string;
-    college: string;
-    role?: string;
-    department?: string;
-    year?: number;
-    rollNumber?: string;
-    phone?: string;
-  }) => {
-    const res = await authApi.register(data);
+const register = async (data: {
+  name: string;
+  email: string;
+  password: string;
+  college: string;
+  role?: string;
+  department?: string;
+  year?: number;
+  rollNumber?: string;
+  phone?: string;
+}) => {
+  const res = await authApi.register(data);
 
-    if (res.data.success && res.data.data) {
-      resetAuthState();
-
-      // FIX: backend returns { user, accessToken }
-      setUser(res.data.data.user);
-    }
-  };
+  if (res.data.success && res.data.data) {
+    resetAuthState();
+    setUser(res.data.data.user);
+  }
+};
 
   const logout = async () => {
     try {
