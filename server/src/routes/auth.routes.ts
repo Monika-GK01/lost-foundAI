@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { register, login, logout, refresh } from '../controllers/auth.controller';
+import { register, login, logout, refresh, changePassword } from '../controllers/auth.controller';
 import { validate, authenticate, authRateLimiter } from '../middlewares';
-import { registerSchema, loginSchema } from '../validators';
+import { registerSchema, loginSchema, changePasswordSchema } from '../validators';
 
 const router = Router();
 
@@ -66,6 +66,28 @@ router.post('/login', authRateLimiter, validate(loginSchema), login);
  *       200: { description: Logged out successfully }
  */
 router.post('/logout', authenticate, logout);
+
+/**
+ * @swagger
+ * /auth/change-password:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Change the current user's password
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [oldPassword, newPassword]
+ *             properties:
+ *               oldPassword: { type: string }
+ *               newPassword: { type: string, minLength: 6 }
+ *     responses:
+ *       200: { description: Password changed successfully }
+ *       400: { description: Current password incorrect or validation error }
+ */
+router.post('/change-password', authenticate, validate(changePasswordSchema), changePassword);
 
 /**
  * @swagger

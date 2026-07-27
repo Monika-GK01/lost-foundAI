@@ -10,7 +10,7 @@ import {
 } from '../controllers/lostItem.controller';
 import { authenticate, collegeIsolation, validate } from '../middlewares';
 import { createLostItemSchema, updateLostItemSchema } from '../validators/lostItem.validator';
-import { uploadSingle } from '../utils/upload';
+import { uploadMultiple } from '../utils/upload';
 
 const router = Router();
 
@@ -45,7 +45,7 @@ router.use(authenticate);
  */
 router.post(
   '/',
-  uploadSingle('image'),
+  uploadMultiple('images', 5),
   validate(createLostItemSchema),
   createLostItem
 );

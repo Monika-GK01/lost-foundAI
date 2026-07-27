@@ -85,6 +85,19 @@ export class UserService {
     return updated;
   }
 
+  async updateUserStatus(userId: string, isActive: boolean): Promise<IUser> {
+    const user = await userRepository.findById(userId);
+    if (!user) {
+      throw ApiError.notFound('User not found');
+    }
+
+    const updated = await userRepository.update(userId, { isActive });
+    if (!updated) {
+      throw ApiError.internal('Failed to update user status');
+    }
+    return updated;
+  }
+
   async deleteUser(userId: string): Promise<void> {
     const user = await userRepository.findById(userId);
     if (!user) {

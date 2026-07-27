@@ -1,7 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { BarChart3, PieChart, TrendingUp } from 'lucide-react';
+import { BarChart3, TrendingUp } from 'lucide-react';
 import { adminApi } from '@/lib/services';
 import { Skeleton } from '@/components/ui/Loading';
+import { StatCard } from '@/components/ui/charts/StatCard';
+import { MonthlyItemsChart, CategoryPieChart, RecoveryAreaChart } from '@/components/ui/charts/Charts';
+import { Package, Search, CheckCircle2, Clock, Users, Sparkles } from 'lucide-react';
 
 export default function AnalyticsPage() {
   const { data, isLoading } = useQuery({
@@ -12,14 +15,27 @@ export default function AnalyticsPage() {
   const analytics = data?.data?.data;
 
   if (isLoading) {
-    return <div className="space-y-4"><Skeleton className="h-8 w-64" /><Skeleton className="h-64 w-full" /><Skeleton className="h-48 w-full" /></div>;
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-64 w-full" />
+        <Skeleton className="h-48 w-full" />
+      </div>
+    );
   }
 
   if (!analytics) {
     return <div className="py-12 text-center text-[var(--color-text-secondary)]">No analytics data available.</div>;
   }
 
-  const maxCategory = Math.max(...analytics.topCategories.map((c) => c.count), 1);
+  const stats = [
+    { label: 'Total Lost', value: analytics.totalLostItems, icon: Package, accent: 'text-red-600 bg-red-100 dark:bg-red-900/30' },
+    { label: 'Total Found', value: analytics.totalFoundItems, icon: Search, accent: 'text-green-600 bg-green-100 dark:bg-green-900/30' },
+    { label: 'Recovered', value: analytics.recoveredItems, icon: CheckCircle2, accent: 'text-purple-600 bg-purple-100 dark:bg-purple-900/30' },
+    { label: 'Avg Resolution', value: `${analytics.averageResolutionTimeHours}h`, icon: Clock, accent: 'text-amber-600 bg-amber-100 dark:bg-amber-900/30' },
+    { label: 'Total Users', value: analytics.totalUsers ?? 0, icon: Users, accent: 'text-blue-600 bg-blue-100 dark:bg-blue-900/30' },
+    { label: 'Avg Match', value: `${analytics.averageMatchScore ?? 0}%`, icon: Sparkles, accent: 'text-indigo-600 bg-indigo-100 dark:bg-indigo-900/30' },
+  ];
 
   return (
     <div className="space-y-8">
@@ -28,56 +44,23 @@ export default function AnalyticsPage() {
           <BarChart3 size={20} />
         </div>
         <div>
-          <h1 className="text-2xl font-bold">Analytics</h1>
+          <h1 className="text-2xl font-bold">Reports & Analytics</h1>
           <p className="text-sm text-[var(--color-text-secondary)]">Campus lost & found insights</p>
         </div>
       </div>
 
-      {/* Overview Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="card text-center">
-          <p className="text-3xl font-bold text-blue-600">{analytics.totalLostItems}</p>
-          <p className="mt-1 text-xs text-[var(--color-text-secondary)]">Total Lost Items</p>
-        </div>
-        <div className="card text-center">
-          <p className="text-3xl font-bold text-green-600">{analytics.totalFoundItems}</p>
-          <p className="mt-1 text-xs text-[var(--color-text-secondary)]">Total Found Items</p>
-        </div>
-        <div className="card text-center">
-          <p className="text-3xl font-bold text-purple-600">{analytics.recoveredItems}</p>
-          <p className="mt-1 text-xs text-[var(--color-text-secondary)]">Items Recovered</p>
-        </div>
-        <div className="card text-center">
-          <p className="text-3xl font-bold text-amber-600">{analytics.averageResolutionTimeHours}h</p>
-          <p className="mt-1 text-xs text-[var(--color-text-secondary)]">Avg Resolution</p>
-        </div>
+      {/* Stat cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {stats.map((s) => (
+          <StatCard key={s.label} label={s.label} value={s.value} icon={s.icon} accent={s.accent} />
+        ))}
       </div>
 
-      {/* Charts Row */}
+      {/* Charts */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Top Categories */}
-        <div className="card">
-          <div className="mb-4 flex items-center gap-2">
-            <PieChart size={18} className="text-primary-600" />
-            <h3 className="font-semibold">Top Categories</h3>
-          </div>
-          <div className="space-y-3">
-            {analytics.topCategories.map((cat) => (
-              <div key={cat.category}>
-                <div className="mb-1 flex items-center justify-between text-sm">
-                  <span>{cat.category}</span>
-                  <span className="font-medium">{cat.count}</span>
-                </div>
-                <div className="h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
-                  <div
-                    className="h-full rounded-full bg-primary-600 transition-all"
-                    style={{ width: `${(cat.count / maxCategory) * 100}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <MonthlyItemsChart data={analytics.monthlyItems ?? []} />
+        <CategoryPieChart data={analytics.categoryDistribution ?? analytics.topCategories} />
+        <RecoveryAreaChart data={analytics.monthlyItems ?? []} />
 
         {/* Trust Score Distribution */}
         <div className="card">
@@ -99,7 +82,7 @@ export default function AnalyticsPage() {
       {/* Summary */}
       <div className="card">
         <h3 className="mb-3 font-semibold">Summary</h3>
-        <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
           <div>
             <p className="text-[var(--color-text-secondary)]">Pending Claims</p>
             <p className="text-lg font-bold">{analytics.pendingClaims}</p>
@@ -110,9 +93,11 @@ export default function AnalyticsPage() {
           </div>
           <div>
             <p className="text-[var(--color-text-secondary)]">Recovery Rate</p>
-            <p className="text-lg font-bold">
-              {analytics.totalLostItems > 0 ? Math.round((analytics.recoveredItems / analytics.totalLostItems) * 100) : 0}%
-            </p>
+            <p className="text-lg font-bold">{analytics.recoveryRate ?? 0}%</p>
+          </div>
+          <div>
+            <p className="text-[var(--color-text-secondary)]">Rejected Claims</p>
+            <p className="text-lg font-bold">{analytics.rejectedClaims ?? 0}</p>
           </div>
         </div>
       </div>

@@ -9,7 +9,7 @@ import {
 } from '../controllers/foundItem.controller';
 import { authenticate, collegeIsolation, validate } from '../middlewares';
 import { createFoundItemSchema, updateFoundItemSchema } from '../validators/foundItem.validator';
-import { uploadSingle } from '../utils/upload';
+import { uploadMultiple } from '../utils/upload';
 
 const router = Router();
 
@@ -43,7 +43,7 @@ router.use(authenticate);
  */
 router.post(
   '/',
-  uploadSingle('image'),
+  uploadMultiple('images', 5),
   validate(createFoundItemSchema),
   createFoundItem
 );

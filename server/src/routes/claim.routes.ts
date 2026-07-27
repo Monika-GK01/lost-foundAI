@@ -5,6 +5,7 @@ import {
   getClaimById,
   cancelClaim,
   reviewClaim,
+  recoverClaim,
   getPendingClaims,
   getCollegeClaims,
   getRecoveryReceipt,
@@ -152,6 +153,28 @@ router.patch(
   authorize(ROLES.COLLEGE_ADMIN, ROLES.SUPER_ADMIN),
   validate(reviewClaimSchema),
   reviewClaim
+);
+
+/**
+ * @swagger
+ * /claims/{id}/recover:
+ *   patch:
+ *     tags: [Claims]
+ *     summary: Mark an approved claim as physically recovered (admin only)
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: Claim marked recovered }
+ *       400: { description: Claim is not approved }
+ *       403: { description: Admin access required }
+ */
+router.patch(
+  '/:id/recover',
+  authorize(ROLES.COLLEGE_ADMIN, ROLES.SUPER_ADMIN),
+  recoverClaim
 );
 
 /**

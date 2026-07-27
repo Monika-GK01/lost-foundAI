@@ -20,6 +20,16 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
     return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
 
+  // Close on Escape for keyboard users.
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, onClose]);
+
   const sizeClasses = { sm: 'max-w-sm', md: 'max-w-lg', lg: 'max-w-2xl' };
 
   return (
@@ -36,12 +46,15 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
+            role="dialog"
+            aria-modal="true"
+            aria-label={title ?? 'Dialog'}
             className={`relative w-full ${sizeClasses[size]} rounded-2xl bg-[var(--color-surface)] p-6 shadow-xl`}
           >
             {title && (
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-[var(--color-text)]">{title}</h2>
-                <button onClick={onClose} className="rounded-lg p-1 hover:bg-gray-100 dark:hover:bg-gray-800">
+                <button onClick={onClose} aria-label="Close dialog" className="rounded-lg p-1 hover:bg-gray-100 dark:hover:bg-gray-800">
                   <X size={20} />
                 </button>
               </div>

@@ -5,6 +5,7 @@ import {
   getUserById,
   updateUser,
   deleteUser,
+  setUserStatus,
 } from '../controllers/user.controller';
 import { authenticate, authorize, collegeIsolation, validate } from '../middlewares';
 import { updateUserSchema } from '../validators';
@@ -66,6 +67,35 @@ router.get(
  *       404: { description: User not found }
  */
 router.get('/:id', collegeIsolation, getUserById);
+
+/**
+ * @swagger
+ * /users/{id}/status:
+ *   patch:
+ *     tags: [Users]
+ *     summary: Enable or disable a user account (admin only)
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               isActive: { type: boolean }
+ *     responses:
+ *       200: { description: Updated user }
+ *       403: { description: Admin access required }
+ */
+router.patch(
+  '/:id/status',
+  authorize(ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN),
+  collegeIsolation,
+  setUserStatus
+);
 
 /**
  * @swagger

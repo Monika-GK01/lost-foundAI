@@ -4,8 +4,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Upload, X } from 'lucide-react';
 import { lostItemsApi } from '@/lib/services';
+import { ImageUploader } from '@/components/ui/ImageUploader';
 import toast from 'react-hot-toast';
 
 const schema = z.object({
@@ -25,7 +25,6 @@ export default function CreateLostItemPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [images, setImages] = useState<File[]>([]);
-  const [previews, setPreviews] = useState<string[]>([]);
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormInput>({
     resolver: zodResolver(schema),
@@ -41,21 +40,6 @@ export default function CreateLostItemPage() {
     onError: () => toast.error('Failed to report lost item'),
   });
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-    setImages((prev) => [...prev, ...files]);
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onloadend = () => setPreviews((prev) => [...prev, reader.result as string]);
-      reader.readAsDataURL(file);
-    });
-  };
-
-  const removeImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
-    setPreviews((prev) => prev.filter((_, i) => i !== index));
-  };
-
   const onSubmit = (data: FormInput) => {
     const formData = new FormData();
     formData.append('title', data.title);
@@ -66,9 +50,7 @@ export default function CreateLostItemPage() {
     formData.append('location', data.location);
     formData.append('dateLost', data.dateLost);
     if (data.reward) formData.append('reward', data.reward);
-    if (images.length > 0) {
-  formData.append('image', images[0]);
-}
+    images.forEach((file) => formData.append('images', file));
     mutation.mutate(formData);
   };
 
@@ -136,21 +118,7 @@ export default function CreateLostItemPage() {
         {/* Image Upload */}
         <div>
           <label className="mb-1 block text-sm font-medium">Images</label>
-          <div className="flex flex-wrap gap-3">
-            {previews.map((src, i) => (
-              <div key={i} className="relative h-20 w-20 overflow-hidden rounded-lg border border-[var(--color-border)]">
-                <img src={src} alt={`Preview ${i}`} className="h-full w-full object-cover" />
-                <button type="button" onClick={() => removeImage(i)} className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white">
-                  <X size={12} />
-                </button>
-              </div>
-            ))}
-            <label className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-[var(--color-border)] text-[var(--color-text-secondary)] transition-colors hover:border-primary-400 hover:text-primary-600">
-              <Upload size={20} />
-              <span className="mt-1 text-[10px]">Upload</span>
-              <input type="file" accept="image/*" multiple onChange={handleImageChange} className="hidden" />
-            </label>
-          </div>
+          <ImageUploader files={images} onChange={setImages} enableCrop />
         </div>
 
         <div className="flex gap-3">

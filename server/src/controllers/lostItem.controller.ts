@@ -8,14 +8,15 @@ import { ROLES } from '../constants';
 
 export const createLostItem = asyncHandler(
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-    const imagePath = req.file?.path;
+    const files = (req.files as Express.Multer.File[] | undefined) ?? [];
+    const imagePaths = files.map((f) => f.path);
     const input = {
       ...req.body,
       owner: req.user!.userId,
       college: req.user!.college,
     };
 
-    const item = await lostItemService.createLostItem(input, imagePath);
+    const item = await lostItemService.createLostItem(input, imagePaths);
     sendCreated(res, 'Lost item reported successfully', item);
   }
 );

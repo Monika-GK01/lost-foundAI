@@ -7,6 +7,7 @@ import {
   markNotificationRead,
   markAllNotificationsRead,
 } from '../controllers/admin.controller';
+import { getReport } from '../controllers/report.controller';
 import { authenticate, authorize } from '../middlewares';
 import { ROLES } from '../constants';
 
@@ -26,6 +27,32 @@ router.use(authorize(ROLES.COLLEGE_ADMIN, ROLES.SUPER_ADMIN));
  *       403: { description: Admin access required }
  */
 router.get('/analytics', getAnalytics);
+
+/**
+ * @swagger
+ * /admin/reports:
+ *   get:
+ *     tags: [Admin]
+ *     summary: Generate an exportable report (JSON preview or CSV download)
+ *     parameters:
+ *       - in: query
+ *         name: type
+ *         required: true
+ *         schema: { type: string, enum: [lost, found, recovered, claims] }
+ *       - in: query
+ *         name: from
+ *         schema: { type: string, format: date }
+ *       - in: query
+ *         name: to
+ *         schema: { type: string, format: date }
+ *       - in: query
+ *         name: format
+ *         schema: { type: string, enum: [json, csv] }
+ *     responses:
+ *       200: { description: Report data or CSV file }
+ *       403: { description: Admin access required }
+ */
+router.get('/reports', getReport);
 
 /**
  * @swagger

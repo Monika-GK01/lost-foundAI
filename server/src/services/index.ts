@@ -9,3 +9,4 @@ export { trustScoreService, TrustScoreService } from './trustScore.service';
 export { notificationService, NotificationService } from './notification.service';
 export { auditLogService, AuditLogService } from './auditLog.service';
 export { adminAnalyticsService, AdminAnalyticsService } from './adminAnalytics.service';
+export { reportService, ReportService } from './report.service';

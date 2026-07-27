@@ -26,6 +26,10 @@ export class NotificationRepository {
     return { notifications, total, unreadCount };
   }
 
+  async countUnread(recipientId: string): Promise<number> {
+    return Notification.countDocuments({ recipient: recipientId, isRead: false }).exec();
+  }
+
   async markAsRead(id: string, recipientId: string): Promise<INotification | null> {
     return Notification.findOneAndUpdate(
       { _id: id, recipient: recipientId },

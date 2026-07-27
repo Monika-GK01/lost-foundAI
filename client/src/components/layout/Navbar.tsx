@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Moon, Sun, Bell, LogOut, User, Search } from 'lucide-react';
+import { Menu, X, Moon, Sun, LogOut, User, Search, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getInitials } from '@/lib/utils';
+import { NotificationDropdown } from './NotificationDropdown';
 
 export function Navbar() {
   const { user, logout } = useAuth();
@@ -11,6 +12,19 @@ export function Navbar() {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close the user menu when clicking outside of it.
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    const onMouseDown = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onMouseDown);
+    return () => document.removeEventListener('mousedown', onMouseDown);
+  }, [userMenuOpen]);
 
   const handleLogout = async () => {
     await logout();
@@ -36,6 +50,7 @@ export function Navbar() {
             <input
               type="text"
               placeholder="Search items..."
+              aria-label="Search items"
               className="input-field pl-9"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') navigate(`/lost-items?keyword=${(e.target as HTMLInputElement).value}`);
@@ -45,17 +60,23 @@ export function Navbar() {
         </div>
 
         <div className="flex items-center gap-2">
+          {user && user.role !== 'STUDENT' && (
+            <Link
+              to="/admin"
+              className="hidden items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700 sm:inline-flex"
+            >
+              <ShieldCheck size={16} /> Admin Portal
+            </Link>
+          )}
           <button onClick={toggle} className="rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-800" aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}>
             {isDark ? <Sun size={18} /> : <Moon size={18} />}
           </button>
 
           {user && (
             <>
-              <Link to="/notifications" className="relative rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-800" aria-label="Notifications">
-                <Bell size={18} />
-              </Link>
+              <NotificationDropdown />
 
-              <div className="relative">
+              <div className="relative" ref={userMenuRef}>
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 dark:bg-primary-900/40 dark:text-primary-300"
@@ -74,6 +95,11 @@ export function Navbar() {
                     <Link to="/profile" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800">
                       <User size={14} /> Profile
                     </Link>
+                    {user.role !== 'STUDENT' && (
+                      <Link to="/admin" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 sm:hidden">
+                        <ShieldCheck size={14} /> Admin Portal
+                      </Link>
+                    )}
                     <button onClick={handleLogout} className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-gray-50 dark:hover:bg-gray-800">
                       <LogOut size={14} /> Logout
                     </button>

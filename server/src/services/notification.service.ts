@@ -47,6 +47,10 @@ export class NotificationService {
     };
   }
 
+  async getUnreadCount(recipientId: string): Promise<number> {
+    return notificationRepository.countUnread(recipientId);
+  }
+
   async markAsRead(id: string, recipientId: string): Promise<INotification | null> {
     return notificationRepository.markAsRead(id, recipientId);
   }

@@ -69,6 +69,14 @@ export const logout = asyncHandler(
   }
 );
 
+export const changePassword = asyncHandler(
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const { oldPassword, newPassword } = req.body;
+    await authService.changePassword(req.user!.userId, oldPassword, newPassword);
+    sendOk(res, 'Password changed successfully');
+  }
+);
+
 export const refresh = asyncHandler(
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const refreshToken = req.cookies[COOKIE_NAMES.REFRESH_TOKEN];

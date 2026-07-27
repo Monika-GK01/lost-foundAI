@@ -38,7 +38,7 @@ export interface UpdateLostItemInput {
 export class LostItemService {
   async createLostItem(
     input: CreateLostItemInput,
-    imagePath?: string
+    imagePaths: string[] = []
   ): Promise<ILostItem> {
     const itemData: Partial<ILostItem> = {
       title: input.title,
@@ -53,36 +53,40 @@ export class LostItemService {
       college: new mongoose.Types.ObjectId(input.college),
     };
 
-    // Upload pipeline: Multer → Cloudinary → AI → DB
-    if (imagePath) {
+    // Upload pipeline: Multer → Cloudinary → AI → DB (supports multiple images)
+    if (imagePaths.length > 0) {
+      // Generate embedding from the first image before temp files are cleaned up.
       try {
-        // Step 1: Upload to Cloudinary
-        const uploadResult = await uploadToCloudinary(
-          imagePath,
-          UPLOAD_FOLDER.ITEM_IMAGES
-        );
-        itemData.images = [uploadResult.secureUrl];
-        itemData.cloudinaryImageId = uploadResult.publicId;
-        itemData.optimizedImageUrl = uploadResult.secureUrl;
-        itemData.thumbnailUrl = uploadResult.secureUrl.replace(
-          '/upload/',
-          '/upload/w_200,h_200,c_thumb/'
-        );
-
-        // Step 2: Generate embedding via AI service
-        const embeddingResult = await generateEmbedding(imagePath);
+        const embeddingResult = await generateEmbedding(imagePaths[0]);
         itemData.embedding = embeddingResult.embedding;
         itemData.embeddingId = `emb_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-
         logger.info(`Embedding generated for lost item: ${input.title}`);
       } catch (error) {
-        const msg = error instanceof Error ? error.message : 'Upload pipeline error';
-        logger.warn(`Upload pipeline partial failure: ${msg}. Creating item without embedding.`);
-      } finally {
-        // Cleanup temp file
-        if (fs.existsSync(imagePath)) {
-          fs.unlinkSync(imagePath);
+        const msg = error instanceof Error ? error.message : 'Embedding error';
+        logger.warn(`Embedding generation failed: ${msg}. Creating item without embedding.`);
+      }
+
+      const uploadedUrls: string[] = [];
+      let firstPublicId = '';
+
+      for (const imagePath of imagePaths) {
+        try {
+          const uploadResult = await uploadToCloudinary(imagePath, UPLOAD_FOLDER.ITEM_IMAGES);
+          uploadedUrls.push(uploadResult.secureUrl);
+          if (!firstPublicId) firstPublicId = uploadResult.publicId;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Upload error';
+          logger.warn(`Image upload failed for lost item: ${msg}`);
+        } finally {
+          if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
         }
+      }
+
+      if (uploadedUrls.length > 0) {
+        itemData.images = uploadedUrls;
+        itemData.cloudinaryImageId = firstPublicId;
+        itemData.optimizedImageUrl = uploadedUrls[0];
+        itemData.thumbnailUrl = uploadedUrls[0].replace('/upload/', '/upload/w_200,h_200,c_thumb/');
       }
     }
 

@@ -1,25 +1,11 @@
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Sparkles, Image, Tag, Palette, FolderOpen, MapPin, Calendar, Type } from 'lucide-react';
+import { ArrowLeft, Sparkles } from 'lucide-react';
 import { lostItemsApi } from '@/lib/services';
 import { Skeleton } from '@/components/ui/Loading';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { MatchExplanation } from '@/components/ui/MatchExplanation';
 import type { MatchResult } from '@/types';
-
-function ScoreBar({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
-  const pct = Math.round(value * 100);
-  const color = pct >= 70 ? 'bg-green-500' : pct >= 40 ? 'bg-yellow-500' : 'bg-gray-400';
-  return (
-    <div className="flex items-center gap-2">
-      <span className="flex w-5 items-center justify-center text-[var(--color-text-secondary)]">{icon}</span>
-      <span className="w-24 text-xs text-[var(--color-text-secondary)]">{label}</span>
-      <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
-        <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
-      </div>
-      <span className="w-8 text-right text-xs font-medium">{pct}%</span>
-    </div>
-  );
-}
 
 export default function AIMatchResultsPage() {
   const { id } = useParams<{ id: string }>();
@@ -91,23 +77,10 @@ export default function AIMatchResultsPage() {
                     </div>
                   </div>
 
-                  {/* Detailed score breakdown */}
-                  <div className="mt-3 space-y-1.5 rounded-lg bg-gray-50 p-3 dark:bg-gray-800/50">
-                    <ScoreBar label="Image" value={match.scores.imageScore ?? 0} icon={<Image size={12} />} />
-                    <ScoreBar label="Title" value={match.scores.titleScore ?? 0} icon={<Type size={12} />} />
-                    <ScoreBar label="Brand" value={match.scores.brandScore ?? 0} icon={<Tag size={12} />} />
-                    <ScoreBar label="Category" value={match.scores.categoryScore ?? 0} icon={<FolderOpen size={12} />} />
-                    <ScoreBar label="Color" value={match.scores.colorScore ?? 0} icon={<Palette size={12} />} />
-                    <ScoreBar label="Location" value={match.scores.locationScore ?? 0} icon={<MapPin size={12} />} />
-                    <ScoreBar label="Date" value={match.scores.dateScore ?? 0} icon={<Calendar size={12} />} />
+                  {/* Detailed score breakdown + explanation */}
+                  <div className="mt-3">
+                    <MatchExplanation scores={match.scores} />
                   </div>
-
-                  {/* AI Explanation */}
-                  {match.scores.explanation && match.scores.explanation.length > 0 && (
-                    <p className="mt-2 text-xs italic text-[var(--color-text-secondary)]">
-                      {match.scores.explanation.join(' ')}
-                    </p>
-                  )}
 
                   <Link
                     to={`/claims/new?lostItemId=${id}&foundItemId=${match.foundItem._id}&score=${Math.round(match.scores.overallScore)}`}

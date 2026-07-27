@@ -19,7 +19,7 @@ export interface CreateClaimInput {
 }
 
 export interface ReviewClaimInput {
-  status: 'APPROVED' | 'REJECTED';
+  status: 'APPROVED' | 'REJECTED' | 'NEEDS_REVIEW';
   adminRemarks?: string;
 }
 
@@ -130,7 +130,7 @@ export class ClaimService {
       throw ApiError.forbidden('You can only cancel your own claims');
     }
 
-    if (![CLAIM_STATUS.PENDING, CLAIM_STATUS.UNDER_REVIEW].includes(claim.status as never)) {
+    if (![CLAIM_STATUS.PENDING, CLAIM_STATUS.UNDER_REVIEW, CLAIM_STATUS.NEEDS_REVIEW].includes(claim.status as never)) {
       throw ApiError.badRequest('Only pending or under-review claims can be cancelled');
     }
 
@@ -188,7 +188,70 @@ export class ClaimService {
       return this.approveClaim(claim, adminId, input.adminRemarks || '', now);
     }
 
+    if (input.status === 'NEEDS_REVIEW') {
+      return this.flagNeedsReview(claim, adminId, input.adminRemarks || '', now);
+    }
+
     return this.rejectClaim(claim, adminId, input.adminRemarks || '', now);
+  }
+
+  /**
+   * Admin marks an approved claim as physically recovered.
+   * Idempotent: ensures item statuses are RETURNED/CLAIMED and re-notifies student.
+   */
+  async recoverClaim(
+    claimId: string,
+    adminId: string,
+    adminCollege: string
+  ): Promise<IClaim> {
+    const claim = await claimRepository.findById(claimId);
+    if (!claim) {
+      throw ApiError.notFound('Claim not found');
+    }
+
+    if (claim.college.toString() !== adminCollege) {
+      throw ApiError.forbidden('You can only manage claims within your college');
+    }
+
+    if (claim.status !== CLAIM_STATUS.APPROVED) {
+      throw ApiError.badRequest('Only approved claims can be marked as recovered');
+    }
+
+    const now = new Date();
+
+    const updated = await claimRepository.update(claimId, {
+      recoveryTimestamp: claim.recoveryTimestamp || now,
+    });
+
+    if (!updated) {
+      throw ApiError.internal('Failed to update claim recovery');
+    }
+
+    // Ensure item statuses reflect recovery
+    await lostItemRepository.update(claim.lostItem.toString(), {
+      status: ITEM_STATUS.LOST.RETURNED,
+    });
+    await foundItemRepository.update(claim.foundItem.toString(), {
+      status: ITEM_STATUS.FOUND.CLAIMED,
+    });
+
+    await notificationService.notifyItemRecovered(
+      claim.student.toString(),
+      'your claimed item'
+    );
+
+    await auditLogService.log({
+      performedBy: adminId,
+      action: AUDIT_ACTIONS.ITEM_RECOVERED,
+      entity: 'Claim',
+      entityId: claimId,
+      college: claim.college.toString(),
+      oldValue: { recoveryTimestamp: claim.recoveryTimestamp },
+      newValue: { recoveryTimestamp: (claim.recoveryTimestamp || now).toISOString() },
+    });
+
+    logger.info(`Claim ${claimId} marked recovered by admin ${adminId}`);
+    return updated;
   }
 
   /**
@@ -303,6 +366,37 @@ export class ClaimService {
     });
 
     logger.info(`Claim ${claim._id} approved by admin ${adminId}`);
+    return updated;
+  }
+
+  private async flagNeedsReview(
+    claim: IClaim,
+    adminId: string,
+    remarks: string,
+    now: Date
+  ): Promise<IClaim> {
+    const updated = await claimRepository.update(claim._id.toString(), {
+      status: CLAIM_STATUS.NEEDS_REVIEW,
+      adminRemarks: remarks,
+      reviewedBy: new mongoose.Types.ObjectId(adminId),
+      reviewedAt: now,
+    });
+
+    if (!updated) {
+      throw ApiError.internal('Failed to flag claim for manual review');
+    }
+
+    await auditLogService.log({
+      performedBy: adminId,
+      action: AUDIT_ACTIONS.CLAIM_REVIEWED,
+      entity: 'Claim',
+      entityId: claim._id.toString(),
+      college: claim.college.toString(),
+      oldValue: { status: claim.status },
+      newValue: { status: CLAIM_STATUS.NEEDS_REVIEW, remarks },
+    });
+
+    logger.info(`Claim ${claim._id} flagged for manual review by admin ${adminId}`);
     return updated;
   }
 

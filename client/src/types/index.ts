@@ -77,13 +77,13 @@ export interface VerificationAnswer {
 
 export interface Claim {
   _id: string;
-  student: { _id: string; name: string; email: string; trustScore: number } | string;
-  lostItem: { _id: string; title: string; category: string; brand: string; color: string } | string;
-  foundItem: { _id: string; title: string; category: string; brand: string; color: string } | string;
+  student: { _id: string; name: string; email: string; trustScore: number; profileImage?: string } | string;
+  lostItem: { _id: string; title: string; description?: string; category: string; brand: string; color: string; images?: string[]; location?: string; dateLost?: string } | string;
+  foundItem: { _id: string; title: string; description?: string; category: string; brand: string; color: string; images?: string[]; location?: string; dateFound?: string } | string;
   college: { _id: string; name: string; collegeCode: string } | string;
   verificationAnswers: VerificationAnswer[];
   proofImages: string[];
-  status: 'PENDING' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+  status: 'PENDING' | 'UNDER_REVIEW' | 'NEEDS_REVIEW' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
   adminRemarks: string;
   reviewedBy: { _id: string; name: string; email: string } | null;
   reviewedAt: string | null;
@@ -127,6 +127,14 @@ export interface Analytics {
   averageResolutionTimeHours: number;
   topCategories: { category: string; count: number }[];
   trustScoreDistribution: { range: string; count: number }[];
+  totalUsers?: number;
+  rejectedClaims?: number;
+  approvedClaims?: number;
+  averageMatchScore?: number;
+  recoveryRate?: number;
+  monthlyItems?: { month: string; lost: number; found: number }[];
+  categoryDistribution?: { category: string; count: number }[];
+  recentActivity?: { _id: string; type: 'claim' | 'lost' | 'found'; title: string; status: string; createdAt: string }[];
 }
 
 export interface ApiResponse<T = unknown> {

@@ -118,6 +118,26 @@ export class AuthService {
     await userRepository.updateRefreshToken(userId, '');
   }
 
+  async changePassword(
+    userId: string,
+    oldPassword: string,
+    newPassword: string
+  ): Promise<void> {
+    const user = await userRepository.findByIdWithPassword(userId);
+
+    if (!user) {
+      throw ApiError.notFound('User not found');
+    }
+
+    const validPassword = await comparePassword(oldPassword, user.password);
+    if (!validPassword) {
+      throw ApiError.badRequest('Current password is incorrect');
+    }
+
+    const hashedPassword = await hashPassword(newPassword);
+    await userRepository.update(userId, { password: hashedPassword });
+  }
+
   async refresh(refreshToken: string): Promise<AuthTokens> {
     let payload: JwtPayload;
 

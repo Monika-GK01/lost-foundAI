@@ -31,6 +31,9 @@ export const authApi = {
   refresh: () =>
     api.post<ApiResponse<{ accessToken: string }>>('/auth/refresh'),
 
+  changePassword: (data: { oldPassword: string; newPassword: string }) =>
+    api.post<ApiResponse>('/auth/change-password', data),
+
   me: () =>
     api.get<ApiResponse<User>>('/users/me'),
 };
@@ -79,8 +82,12 @@ export const claimsApi = {
     api.get<ApiResponse<Claim>>(`/claims/${id}`),
   cancel: (id: string) =>
     api.patch<ApiResponse<Claim>>(`/claims/${id}/cancel`),
-  review: (id: string, data: { status: 'APPROVED' | 'REJECTED'; adminRemarks?: string }) =>
+  review: (id: string, data: { status: 'APPROVED' | 'REJECTED' | 'NEEDS_REVIEW'; adminRemarks?: string }) =>
     api.patch<ApiResponse<Claim>>(`/claims/${id}/review`, data),
+  recover: (id: string) =>
+    api.patch<ApiResponse<Claim>>(`/claims/${id}/recover`),
+  getRecoveryReceipt: (id: string) =>
+    api.get<ApiResponse<{ qrCode: string; recoveryId: string; status: string; recoveryDate: string }>>(`/claims/${id}/recovery-receipt`),
   getPending: (params?: { page?: number; limit?: number }) =>
     api.get<ApiResponse<PaginatedData<Claim>>>('/claims/pending', { params }),
   getCollege: (params?: { page?: number; limit?: number; status?: string }) =>
@@ -99,6 +106,11 @@ export const adminApi = {
     api.patch<ApiResponse<Notification>>(`/admin/notifications/${id}/read`),
   markAllNotificationsRead: () =>
     api.patch<ApiResponse>('/admin/notifications/read-all'),
+  getReport: (params: { type: string; from?: string; to?: string; format?: string }) =>
+    api.get<ApiResponse<{ type: string; count: number; headers: string[]; rows: (string | number)[][] }>>(
+      '/admin/reports',
+      { params }
+    ),
 };
 
 // ─── Users ──────────────────────────────────────────────────────────────
@@ -109,6 +121,22 @@ export const usersApi = {
     api.get<ApiResponse<User>>(`/users/${id}`),
   update: (id: string, data: Record<string, unknown>) =>
     api.put<ApiResponse<User>>(`/users/${id}`, data),
+  setStatus: (id: string, isActive: boolean) =>
+    api.patch<ApiResponse<User>>(`/users/${id}/status`, { isActive }),
+  delete: (id: string) =>
+    api.delete<ApiResponse>(`/users/${id}`),
+};
+
+// ─── Notifications ──────────────────────────────────────────────────────
+export const notificationsApi = {
+  getAll: (params?: { page?: number; limit?: number }) =>
+    api.get<ApiResponse<PaginatedData<Notification> & { unreadCount: number }>>('/notifications', { params }),
+  getUnreadCount: () =>
+    api.get<ApiResponse<{ unreadCount: number }>>('/notifications/unread-count'),
+  markRead: (id: string) =>
+    api.patch<ApiResponse<Notification>>(`/notifications/${id}/read`),
+  markAllRead: () =>
+    api.patch<ApiResponse>('/notifications/read-all'),
 };
 
 // ─── Colleges ───────────────────────────────────────────────────────────
@@ -117,4 +145,12 @@ export const collegesApi = {
     api.get<ApiResponse<PaginatedData<{ colleges: unknown[]; total: number }>>>('/colleges', { params }),
   getById: (id: string) =>
     api.get<ApiResponse>(`/colleges/${id}`),
+};
+
+// ─── Public Stats ───────────────────────────────────────────────────────
+export const statsApi = {
+  getPublic: () =>
+    api.get<ApiResponse<{ lostItems: number; foundItems: number; recovered: number; activeUsers: number }>>(
+      '/stats/public'
+    ),
 };

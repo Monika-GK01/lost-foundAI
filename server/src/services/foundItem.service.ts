@@ -1,11 +1,14 @@
 import mongoose from 'mongoose';
 import { foundItemRepository, FoundItemFilter } from '../repositories/foundItem.repository';
+import { lostItemRepository } from '../repositories/lostItem.repository';
 import { ApiError } from '../utils/ApiError';
 import { uploadToCloudinary } from '../config/cloudinary';
 import { generateEmbedding } from '../utils/aiClient';
 import { IFoundItem } from '../models';
-import { UPLOAD_FOLDER, PAGINATION } from '../constants';
+import { UPLOAD_FOLDER, PAGINATION, ITEM_STATUS } from '../constants';
 import { logger } from '../utils/logger';
+import { matchEngineService } from './matchEngine.service';
+import { notificationService } from './notification.service';
 import fs from 'fs';
 
 export interface CreateFoundItemInput {
@@ -34,7 +37,7 @@ export interface UpdateFoundItemInput {
 export class FoundItemService {
   async createFoundItem(
     input: CreateFoundItemInput,
-    imagePath?: string
+    imagePaths: string[] = []
   ): Promise<IFoundItem> {
     const itemData: Partial<IFoundItem> = {
       title: input.title,
@@ -48,40 +51,95 @@ export class FoundItemService {
       college: new mongoose.Types.ObjectId(input.college),
     };
 
-    // Upload pipeline: Multer → Cloudinary → AI → DB
-    if (imagePath) {
+    // Upload pipeline: Multer → Cloudinary → AI → DB (supports multiple images)
+    if (imagePaths.length > 0) {
+      // Generate embedding from the first image before temp files are cleaned up.
       try {
-        // Step 1: Upload to Cloudinary
-        const uploadResult = await uploadToCloudinary(
-          imagePath,
-          UPLOAD_FOLDER.ITEM_IMAGES
-        );
-        itemData.images = [uploadResult.secureUrl];
-        itemData.cloudinaryImageId = uploadResult.publicId;
-        itemData.optimizedImageUrl = uploadResult.secureUrl;
-        itemData.thumbnailUrl = uploadResult.secureUrl.replace(
-          '/upload/',
-          '/upload/w_200,h_200,c_thumb/'
-        );
-
-        // Step 2: Generate embedding via AI service
-        const embeddingResult = await generateEmbedding(imagePath);
+        const embeddingResult = await generateEmbedding(imagePaths[0]);
         itemData.embedding = embeddingResult.embedding;
         itemData.embeddingId = `emb_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-
         logger.info(`Embedding generated for found item: ${input.title}`);
       } catch (error) {
-        const msg = error instanceof Error ? error.message : 'Upload pipeline error';
-        logger.warn(`Upload pipeline partial failure: ${msg}. Creating item without embedding.`);
-      } finally {
-        // Cleanup temp file
-        if (fs.existsSync(imagePath)) {
-          fs.unlinkSync(imagePath);
+        const msg = error instanceof Error ? error.message : 'Embedding error';
+        logger.warn(`Embedding generation failed: ${msg}. Creating item without embedding.`);
+      }
+
+      const uploadedUrls: string[] = [];
+      let firstPublicId = '';
+
+      for (const imagePath of imagePaths) {
+        try {
+          const uploadResult = await uploadToCloudinary(imagePath, UPLOAD_FOLDER.ITEM_IMAGES);
+          uploadedUrls.push(uploadResult.secureUrl);
+          if (!firstPublicId) firstPublicId = uploadResult.publicId;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Upload error';
+          logger.warn(`Image upload failed for found item: ${msg}`);
+        } finally {
+          if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
         }
+      }
+
+      if (uploadedUrls.length > 0) {
+        itemData.images = uploadedUrls;
+        itemData.cloudinaryImageId = firstPublicId;
+        itemData.optimizedImageUrl = uploadedUrls[0];
+        itemData.thumbnailUrl = uploadedUrls[0].replace('/upload/', '/upload/w_200,h_200,c_thumb/');
       }
     }
 
-    return foundItemRepository.create(itemData);
+    return foundItemRepository.create(itemData).then(async (created) => {
+      await this.notifyMatchingLostOwners(created);
+      return created;
+    });
+  }
+
+  /**
+   * After a found item is created, scan open lost items in the same college and
+   * notify owners when the metadata-based match score crosses the threshold.
+   * Wrapped so notification failures never break item creation.
+   */
+  private async notifyMatchingLostOwners(foundItem: IFoundItem): Promise<void> {
+    const MATCH_NOTIFY_THRESHOLD = 0.5;
+    try {
+      const lostItems = await lostItemRepository.findAll(
+        {
+          college: foundItem.college.toString(),
+          status: ITEM_STATUS.LOST.OPEN,
+          category: foundItem.category,
+        },
+        1,
+        25
+      );
+
+      for (const lost of lostItems.items) {
+        const scores = matchEngineService.calculateMatchScore(
+          {
+            title: lost.title,
+            description: lost.description,
+            category: lost.category,
+            brand: lost.brand,
+            color: lost.color,
+            location: lost.location,
+            dateLost: lost.dateLost,
+          },
+          foundItem,
+          0
+        );
+
+        if (scores.overallScore >= MATCH_NOTIFY_THRESHOLD) {
+          await notificationService.notifyNewMatch(
+            lost.owner.toString(),
+            lost.title,
+            foundItem.title,
+            scores.overallScore
+          );
+        }
+      }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      logger.warn(`Match notification pass failed for found item ${foundItem._id}: ${msg}`);
+    }
   }
 
   async getAllFoundItems(

@@ -79,8 +79,29 @@ export const reviewClaim = asyncHandler(
       req.user!.college
     );
 
-    const message = status === 'APPROVED' ? 'Claim approved successfully' : 'Claim rejected';
+    const message =
+      status === 'APPROVED'
+        ? 'Claim approved successfully'
+        : status === 'NEEDS_REVIEW'
+        ? 'Claim flagged for manual review'
+        : 'Claim rejected';
     sendOk(res, message, claim);
+  }
+);
+
+/**
+ * PATCH /api/claims/:id/recover
+ * Admin marks an approved claim as physically recovered.
+ */
+export const recoverClaim = asyncHandler(
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const claim = await claimService.recoverClaim(
+      req.params.id,
+      req.user!.userId,
+      req.user!.college
+    );
+
+    sendOk(res, 'Claim marked as recovered', claim);
   }
 );
 

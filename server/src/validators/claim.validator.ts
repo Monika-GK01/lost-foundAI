@@ -17,8 +17,8 @@ export const createClaimSchema = z.object({
 });
 
 export const reviewClaimSchema = z.object({
-  status: z.enum(['APPROVED', 'REJECTED'], {
-    errorMap: () => ({ message: 'Status must be APPROVED or REJECTED' }),
+  status: z.enum(['APPROVED', 'REJECTED', 'NEEDS_REVIEW'], {
+    errorMap: () => ({ message: 'Status must be APPROVED, REJECTED or NEEDS_REVIEW' }),
   }),
   adminRemarks: z.string().max(2000, 'Remarks cannot exceed 2000 characters').optional(),
 });

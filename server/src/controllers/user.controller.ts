@@ -3,6 +3,7 @@ import { userService } from '../services';
 import { AuthenticatedRequest } from '../types';
 import { asyncHandler } from '../utils/asyncHandler';
 import { sendOk, sendNoContent } from '../utils/ApiResponse';
+import { ApiError } from '../utils/ApiError';
 import { ROLES } from '../constants';
 
 export const getProfile = asyncHandler(
@@ -55,5 +56,21 @@ export const deleteUser = asyncHandler(
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     await userService.deleteUser(req.params.id);
     sendNoContent(res, 'User deleted successfully');
+  }
+);
+
+export const setUserStatus = asyncHandler(
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    if (req.user!.userId === req.params.id) {
+      throw ApiError.badRequest('You cannot change your own account status');
+    }
+
+    const { isActive } = req.body;
+    if (typeof isActive !== 'boolean') {
+      throw ApiError.badRequest('isActive must be a boolean');
+    }
+
+    const updated = await userService.updateUserStatus(req.params.id, isActive);
+    sendOk(res, isActive ? 'User enabled' : 'User disabled', updated);
   }
 );

@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { AdminLayout } from '@/components/layout/AdminLayout';
 import { LoadingSpinner } from '@/components/ui/Loading';
 
 // Lazy-loaded pages
@@ -10,7 +11,7 @@ const LoginPage = lazy(() => import('@/pages/LoginPage'));
 const RegisterPage = lazy(() => import('@/pages/RegisterPage'));
 const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'));
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
-const AdminDashboardPage = lazy(() => import('@/pages/AdminDashboardPage'));
+const AdminOverviewPage = lazy(() => import('@/pages/admin/AdminOverviewPage'));
 const LostItemsPage = lazy(() => import('@/pages/LostItemsPage'));
 const FoundItemsPage = lazy(() => import('@/pages/FoundItemsPage'));
 const CreateLostItemPage = lazy(() => import('@/pages/CreateLostItemPage'));
@@ -25,6 +26,11 @@ const NotificationsPage = lazy(() => import('@/pages/NotificationsPage'));
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
 const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage'));
 const AdminClaimReviewPage = lazy(() => import('@/pages/AdminClaimReviewPage'));
+const AdminClaimsPage = lazy(() => import('@/pages/admin/AdminClaimsPage'));
+const AdminItemsPage = lazy(() => import('@/pages/admin/AdminItemsPage'));
+const AdminUsersPage = lazy(() => import('@/pages/admin/AdminUsersPage'));
+const AdminReportsPage = lazy(() => import('@/pages/admin/AdminReportsPage'));
+const AdminSettingsPage = lazy(() => import('@/pages/admin/AdminSettingsPage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
 const UnauthorizedPage = lazy(() => import('@/pages/UnauthorizedPage'));
 
@@ -95,10 +101,15 @@ export default function App() {
           {/* Admin Routes */}
           <Route element={<ProtectedRoute />}>
             <Route element={<AdminRoute />}>
-              <Route element={<AppLayout />}>
-                <Route path="/admin" element={<AdminDashboardPage />} />
-                <Route path="/admin/claims" element={<AdminClaimReviewPage />} />
+              <Route element={<AdminLayout />}>
+                <Route path="/admin" element={<AdminOverviewPage />} />
+                <Route path="/admin/claims" element={<AdminClaimsPage />} />
                 <Route path="/admin/claims/:id" element={<AdminClaimReviewPage />} />
+                <Route path="/admin/lost-items" element={<AdminItemsPage type="lost" />} />
+                <Route path="/admin/found-items" element={<AdminItemsPage type="found" />} />
+                <Route path="/admin/users" element={<AdminUsersPage />} />
+                <Route path="/admin/reports" element={<AdminReportsPage />} />
+                <Route path="/admin/settings" element={<AdminSettingsPage />} />
                 <Route path="/admin/analytics" element={<AnalyticsPage />} />
               </Route>
             </Route>

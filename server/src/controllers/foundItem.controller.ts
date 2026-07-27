@@ -8,14 +8,15 @@ import { ROLES } from '../constants';
 
 export const createFoundItem = asyncHandler(
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-    const imagePath = req.file?.path;
+    const files = (req.files as Express.Multer.File[] | undefined) ?? [];
+    const imagePaths = files.map((f) => f.path);
     const input = {
       ...req.body,
       finder: req.user!.userId,
       college: req.user!.college,
     };
 
-    const item = await foundItemService.createFoundItem(input, imagePath);
+    const item = await foundItemService.createFoundItem(input, imagePaths);
     sendCreated(res, 'Found item reported successfully', item);
   }
 );
