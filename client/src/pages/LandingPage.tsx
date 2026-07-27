@@ -133,17 +133,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Live Stats */}
-      <section className="mx-auto -mt-12 max-w-5xl px-4">
-        <div className="grid grid-cols-2 gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-lg lg:grid-cols-4">
-          {statCards.map((s) => (
-            <div key={s.label} className="text-center">
-              <p className="text-3xl font-bold text-primary-600">{s.value}</p>
-              <p className="mt-1 text-xs text-[var(--color-text-secondary)]">{s.label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+
 
       {/* How It Works */}
       <section className="mx-auto max-w-6xl px-4 py-20">
