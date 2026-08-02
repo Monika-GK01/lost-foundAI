@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/Loading';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Pagination } from '@/components/ui/Pagination';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { getInitials, formatDate, cn } from '@/lib/utils';
+import { getInitials, formatDate, cn, getTrustTier } from '@/lib/utils';
 import type { User, Claim } from '@/types';
 import toast from 'react-hot-toast';
 
@@ -150,7 +150,14 @@ export default function AdminUsersPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-[var(--color-text-secondary)]">{u.department || '—'}</td>
-                    <td className="px-4 py-3 font-medium">{u.trustScore}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-medium">{u.trustScore}</span>
+                        <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${getTrustTier(u.trustScore).badge}`}>
+                          {getTrustTier(u.trustScore).label}
+                        </span>
+                      </div>
+                    </td>
                     <td className="px-4 py-3">
                       <span
                         className={cn(

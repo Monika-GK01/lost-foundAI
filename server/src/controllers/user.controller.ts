@@ -1,15 +1,21 @@
 import { Response } from 'express';
 import { userService } from '../services';
+import { trustScoreService } from '../services/trustScore.service';
 import { AuthenticatedRequest } from '../types';
 import { asyncHandler } from '../utils/asyncHandler';
 import { sendOk, sendNoContent } from '../utils/ApiResponse';
 import { ApiError } from '../utils/ApiError';
 import { ROLES } from '../constants';
 
+/** Attach computed trustTier to a user response object */
+function withTrustTier<T extends { trustScore: number }>(user: T): T & { trustTier: string } {
+  return { ...user, trustTier: trustScoreService.getTrustTier(user.trustScore).label };
+}
+
 export const getProfile = asyncHandler(
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const user = await userService.getProfile(req.user!.userId);
-    sendOk(res, 'Profile retrieved successfully', user);
+    sendOk(res, 'Profile retrieved successfully', withTrustTier(user.toObject() as any));
   }
 );
 
@@ -23,14 +29,15 @@ export const getAllUsers = asyncHandler(
       req.user!.role === ROLES.SUPER_ADMIN ? null : req.user!.college;
 
     const result = await userService.getAllUsers(collegeId, page, limit);
-    sendOk(res, 'Users retrieved successfully', result);
+    const data = result.data.map((u: any) => withTrustTier(u.toObject ? u.toObject() : u));
+    sendOk(res, 'Users retrieved successfully', { ...result, data });
   }
 );
 
 export const getUserById = asyncHandler(
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const user = await userService.getUserById(req.params.id);
-    sendOk(res, 'User retrieved successfully', user);
+    sendOk(res, 'User retrieved successfully', withTrustTier(user.toObject() as any));
   }
 );
 

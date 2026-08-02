@@ -36,10 +36,18 @@ export default function LostItemDetailPage() {
         <div className="space-y-3">
           <div className="aspect-square overflow-hidden rounded-xl border border-[var(--color-border)] bg-gray-100 dark:bg-gray-800">
             {item.images?.[0] ? (
-              <img src={item.images[0]} alt={item.title} className="h-full w-full object-cover" />
-            ) : (
-              <div className="flex h-full items-center justify-center text-[var(--color-text-secondary)]">No Image</div>
-            )}
+              <img
+                src={item.images[0]}
+                alt={item.title}
+                className="h-full w-full object-cover"
+                onError={(e) => {
+                  const img = e.target as HTMLImageElement;
+                  img.style.display = 'none';
+                  img.nextElementSibling?.classList.remove('hidden');
+                }}
+              />
+            ) : null}
+            <div className={`${item.images?.[0] ? 'hidden' : 'flex'} h-full items-center justify-center text-[var(--color-text-secondary)]`}>No Image</div>
           </div>
           {item.images?.length > 1 && (
             <div className="flex gap-2">

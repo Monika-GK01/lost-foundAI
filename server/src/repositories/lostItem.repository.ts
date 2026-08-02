@@ -64,7 +64,23 @@ export class LostItemRepository {
     if (filter.status) query.status = filter.status;
 
     if (filter.keyword) {
-      query.$text = { $search: filter.keyword };
+      const words = filter.keyword.trim().split(/\s+/).filter(Boolean);
+      if (words.length > 0) {
+        const conditions = words.map((word) => {
+          const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const regex = { $regex: escaped, $options: 'i' };
+          return {
+            $or: [
+              { title: regex },
+              { description: regex },
+              { brand: regex },
+              { color: regex },
+              { category: regex },
+            ],
+          };
+        });
+        query.$and = conditions;
+      }
     }
 
     if (filter.dateFrom || filter.dateTo) {

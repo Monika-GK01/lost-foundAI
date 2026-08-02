@@ -6,6 +6,15 @@ export interface IVerificationAnswer {
   answer: string;
 }
 
+export interface IPickupDetails {
+  office: string;
+  building: string;
+  room: string;
+  contactPerson: string;
+  pickupTime: string;
+  verificationCode: string;
+}
+
 export interface IClaim extends Document {
   _id: mongoose.Types.ObjectId;
   student: mongoose.Types.ObjectId;
@@ -20,6 +29,7 @@ export interface IClaim extends Document {
   reviewedAt: Date | null;
   recoveryTimestamp: Date | null;
   aiMatchScore: number;
+  pickupDetails: IPickupDetails | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -34,6 +44,18 @@ const verificationAnswerSchema = new Schema<IVerificationAnswer>(
       type: String,
       required: true,
     },
+  },
+  { _id: false }
+);
+
+const pickupDetailsSchema = new Schema<IPickupDetails>(
+  {
+    office: { type: String, default: 'Student Affairs Office' },
+    building: { type: String, default: 'Block A' },
+    room: { type: String, default: '105' },
+    contactPerson: { type: String, default: '' },
+    pickupTime: { type: String, default: '' },
+    verificationCode: { type: String, default: '' },
   },
   { _id: false }
 );
@@ -94,6 +116,10 @@ const claimSchema = new Schema<IClaim>(
     aiMatchScore: {
       type: Number,
       default: 0,
+    },
+    pickupDetails: {
+      type: pickupDetailsSchema,
+      default: null,
     },
   },
   {

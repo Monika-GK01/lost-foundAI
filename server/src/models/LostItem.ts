@@ -28,6 +28,8 @@ export interface ILostItem extends Document {
   thumbnailUrl: string;
   optimizedImageUrl: string;
   imageMetadata: IImageMetadata | null;
+  acceptedMatchId: mongoose.Types.ObjectId | null;
+  ignoredMatchIds: mongoose.Types.ObjectId[];
   isDeleted: boolean;
   deletedAt: Date | null;
   createdAt: Date;
@@ -122,6 +124,16 @@ const lostItemSchema = new Schema<ILostItem>(
       height: { type: Number, default: 0 },
       format: { type: String, default: '' },
       size: { type: Number, default: 0 },
+    },
+    acceptedMatchId: {
+      type: Schema.Types.ObjectId,
+      ref: 'FoundItem',
+      default: null,
+    },
+    ignoredMatchIds: {
+      type: [Schema.Types.ObjectId],
+      ref: 'FoundItem',
+      default: [],
     },
     isDeleted: {
       type: Boolean,

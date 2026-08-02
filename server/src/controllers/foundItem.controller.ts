@@ -16,8 +16,8 @@ export const createFoundItem = asyncHandler(
       college: req.user!.college,
     };
 
-    const item = await foundItemService.createFoundItem(input, imagePaths);
-    sendCreated(res, 'Found item reported successfully', item);
+    const { item, uploadWarnings } = await foundItemService.createFoundItem(input, imagePaths);
+    sendCreated(res, 'Found item reported successfully', { ...item.toObject(), uploadWarnings });
   }
 );
 

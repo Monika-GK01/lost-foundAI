@@ -8,6 +8,13 @@ cloudinary.config({
   api_secret: env.CLOUDINARY_API_SECRET,
 });
 
+if (!env.CLOUDINARY_CLOUD_NAME || !env.CLOUDINARY_API_KEY || !env.CLOUDINARY_API_SECRET) {
+  logger.warn(
+    '⚠️  Cloudinary is NOT fully configured (CLOUDINARY_CLOUD_NAME / API_KEY / API_SECRET). ' +
+    'Image uploads will FAIL. Set these environment variables to enable image storage.'
+  );
+}
+
 export interface UploadResult {
   publicId: string;
   secureUrl: string;

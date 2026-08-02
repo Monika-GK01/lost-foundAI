@@ -35,11 +35,16 @@ export interface UpdateLostItemInput {
   status?: string;
 }
 
+export interface CreateItemResult {
+  item: ILostItem;
+  uploadWarnings: string[];
+}
+
 export class LostItemService {
   async createLostItem(
     input: CreateLostItemInput,
     imagePaths: string[] = []
-  ): Promise<ILostItem> {
+  ): Promise<CreateItemResult> {
     const itemData: Partial<ILostItem> = {
       title: input.title,
       description: input.description,
@@ -67,6 +72,7 @@ export class LostItemService {
       }
 
       const uploadedUrls: string[] = [];
+      const uploadWarnings: string[] = [];
       let firstPublicId = '';
 
       for (const imagePath of imagePaths) {
@@ -77,9 +83,15 @@ export class LostItemService {
         } catch (error) {
           const msg = error instanceof Error ? error.message : 'Upload error';
           logger.warn(`Image upload failed for lost item: ${msg}`);
+          uploadWarnings.push(`Image upload failed: ${msg}`);
         } finally {
           if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
         }
+      }
+
+      // If all uploads failed, reject the creation entirely
+      if (uploadedUrls.length === 0 && imagePaths.length > 0) {
+        throw ApiError.internal('All image uploads failed. Please check your Cloudinary configuration and try again.');
       }
 
       if (uploadedUrls.length > 0) {
@@ -88,9 +100,13 @@ export class LostItemService {
         itemData.optimizedImageUrl = uploadedUrls[0];
         itemData.thumbnailUrl = uploadedUrls[0].replace('/upload/', '/upload/w_200,h_200,c_thumb/');
       }
+
+      const item = await lostItemRepository.create(itemData);
+      return { item, uploadWarnings };
     }
 
-    return lostItemRepository.create(itemData);
+    const item = await lostItemRepository.create(itemData);
+    return { item, uploadWarnings: [] };
   }
 
   async getAllLostItems(
@@ -245,9 +261,62 @@ export class LostItemService {
 
     const results = matchEngineService.rankMatches(lostItemData, foundItems, imageSimilarities);
 
-    logger.info(`[MATCH] Final ranked matches: ${results.length} (top score: ${results[0]?.scores.overallScore ?? 0})`);
+    // Filter out ignored matches
+    const ignoredIds = new Set(
+      (lostItem.ignoredMatchIds || []).map((id) => id.toString())
+    );
+    const filtered = results.filter(
+      (r) => !ignoredIds.has(r.foundItem._id.toString())
+    );
 
-    return results;
+    logger.info(`[MATCH] Final ranked matches: ${filtered.length} (top score: ${filtered[0]?.scores.overallScore ?? 0})`);
+
+    return filtered;
+  }
+
+  /**
+   * Accept or ignore a match suggestion for a lost item.
+   */
+  async matchAction(
+    lostItemId: string,
+    userId: string,
+    foundItemId: string,
+    action: 'accept' | 'ignore'
+  ): Promise<ILostItem> {
+    const lostItem = await lostItemRepository.findById(lostItemId);
+    if (!lostItem) {
+      throw ApiError.notFound('Lost item not found');
+    }
+    if (lostItem.owner.toString() !== userId) {
+      throw ApiError.forbidden('You can only manage matches for your own items');
+    }
+
+    const foundItem = await foundItemRepository.findById(foundItemId);
+    if (!foundItem) {
+      throw ApiError.notFound('Found item not found');
+    }
+
+    if (action === 'accept') {
+      const updated = await lostItemRepository.update(lostItemId, {
+        acceptedMatchId: new mongoose.Types.ObjectId(foundItemId),
+      } as any);
+      if (!updated) throw ApiError.internal('Failed to accept match');
+      logger.info(`Match accepted: lost=${lostItemId} found=${foundItemId}`);
+      return updated;
+    } else {
+      // Add to ignoredMatchIds if not already present
+      const currentIgnored = lostItem.ignoredMatchIds || [];
+      const alreadyIgnored = currentIgnored.some((id) => id.toString() === foundItemId);
+      if (!alreadyIgnored) {
+        currentIgnored.push(new mongoose.Types.ObjectId(foundItemId));
+      }
+      const updated = await lostItemRepository.update(lostItemId, {
+        ignoredMatchIds: currentIgnored,
+      } as any);
+      if (!updated) throw ApiError.internal('Failed to ignore match');
+      logger.info(`Match ignored: lost=${lostItemId} found=${foundItemId}`);
+      return updated;
+    }
   }
 }
 

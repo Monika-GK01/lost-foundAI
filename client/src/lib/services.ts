@@ -54,6 +54,8 @@ export const lostItemsApi = {
     api.delete<ApiResponse>(`/lost-items/${id}`),
   getMatches: (id: string) =>
     api.get<ApiResponse<{ lostItemId: string; matchesCount: number; matches: MatchResult[] }>>(`/lost-items/${id}/matches`),
+  matchAction: (id: string, data: { foundItemId: string; action: 'accept' | 'ignore' }) =>
+    api.post<ApiResponse<LostItem>>(`/lost-items/${id}/match-action`, data),
 };
 
 // ─── Found Items ────────────────────────────────────────────────────────

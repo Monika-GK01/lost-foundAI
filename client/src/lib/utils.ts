@@ -49,3 +49,10 @@ export function getStatusColor(status: string): string {
   };
   return colors[status] || 'bg-gray-100 text-gray-800';
 }
+
+export function getTrustTier(score: number): { label: string; color: string; badge: string } {
+  if (score >= 80) return { label: 'Platinum', color: 'text-violet-600', badge: 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300' };
+  if (score >= 60) return { label: 'Gold', color: 'text-amber-600', badge: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' };
+  if (score >= 40) return { label: 'Silver', color: 'text-gray-500', badge: 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300' };
+  return { label: 'Bronze', color: 'text-orange-700', badge: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300' };
+}

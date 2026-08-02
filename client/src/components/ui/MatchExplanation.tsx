@@ -16,6 +16,7 @@ export interface MatchScores {
   dateScore?: number;
   overallScore?: number;
   explanation?: string[];
+  summary?: string;
 }
 
 interface MatchExplanationProps {
@@ -45,6 +46,13 @@ export function MatchExplanation({ scores, showExplanation = true }: MatchExplan
 
   return (
     <div className="space-y-3">
+      {/* Natural-language summary */}
+      {scores.summary && (
+        <p className="rounded-lg bg-primary-50 px-3 py-2 text-sm italic text-primary-800 dark:bg-primary-900/20 dark:text-primary-200">
+          {scores.summary}
+        </p>
+      )}
+
       <div className="space-y-1.5 rounded-lg bg-gray-50 p-3 dark:bg-gray-800/50">
         {DIMENSIONS.map(({ key, label, icon: Icon }) => (
           <ScoreBar key={key} label={label} value={(scores[key] as number) ?? 0} icon={<Icon size={12} />} />

@@ -72,11 +72,11 @@ export const UPLOAD_FOLDER = {
 } as const;
 
 export const MATCH_WEIGHTS = {
-  IMAGE_SIMILARITY: 0.30,
-  TITLE_MATCH: 0.20,
-  BRAND_MATCH: 0.15,
+  IMAGE_SIMILARITY: 0.55,
+  TITLE_MATCH: 0.05,
+  BRAND_MATCH: 0.10,
   COLOR_MATCH: 0.10,
-  CATEGORY_MATCH: 0.15,
+  CATEGORY_MATCH: 0.10,
   LOCATION_MATCH: 0.05,
   DATE_PROXIMITY: 0.05,
 } as const;
@@ -85,6 +85,7 @@ export const MATCH_CONFIG = {
   DEFAULT_TOP_K: 10,
   MAX_TOP_K: 50,
   SIMILARITY_THRESHOLD: 0.3,
+  MINIMUM_OVERALL_SCORE: 0.15,
   DATE_PROXIMITY_DAYS: 30,
 } as const;
 
@@ -104,12 +105,21 @@ export const ITEM_CATEGORIES = [
 export const TRUST_SCORE = {
   APPROVED_CLAIM: 10,
   SUCCESSFUL_FOUND_SUBMISSION: 5,
+  ITEM_RECOVERED: 8,
+  FOUND_ITEM_VERIFIED: 3,
   FALSE_CLAIM: -10,
   REJECTED_SPAM: -15,
   DUPLICATE_REPORT: -5,
   MIN: 0,
   MAX: 100,
   DEFAULT: 50,
+} as const;
+
+export const TRUST_TIERS = {
+  BRONZE: { label: 'Bronze', min: 0, max: 39 },
+  SILVER: { label: 'Silver', min: 40, max: 59 },
+  GOLD: { label: 'Gold', min: 60, max: 79 },
+  PLATINUM: { label: 'Platinum', min: 80, max: 100 },
 } as const;
 
 export const AUDIT_ACTIONS = {

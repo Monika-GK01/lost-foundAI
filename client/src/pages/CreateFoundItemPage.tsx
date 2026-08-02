@@ -31,12 +31,18 @@ export default function CreateFoundItemPage() {
 
   const mutation = useMutation({
     mutationFn: (formData: FormData) => foundItemsApi.create(formData),
-    onSuccess: () => {
+    onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['found-items'] });
-      toast.success('Found item reported successfully!');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const warnings = (res?.data?.data as any)?.uploadWarnings as string[] | undefined;
+      if (warnings && warnings.length > 0) {
+        toast.success('Found item reported, but some images failed to upload.');
+      } else {
+        toast.success('Found item reported successfully!');
+      }
       navigate('/found-items');
     },
-    onError: () => toast.error('Failed to report found item'),
+    onError: () => toast.error('Failed to report found item. If you attached images, please try again.'),
   });
 
   const onSubmit = (data: FormInput) => {

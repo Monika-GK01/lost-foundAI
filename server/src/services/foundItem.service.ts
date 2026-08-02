@@ -34,11 +34,16 @@ export interface UpdateFoundItemInput {
   status?: string;
 }
 
+export interface CreateFoundItemResult {
+  item: IFoundItem;
+  uploadWarnings: string[];
+}
+
 export class FoundItemService {
   async createFoundItem(
     input: CreateFoundItemInput,
     imagePaths: string[] = []
-  ): Promise<IFoundItem> {
+  ): Promise<CreateFoundItemResult> {
     const itemData: Partial<IFoundItem> = {
       title: input.title,
       description: input.description,
@@ -65,6 +70,7 @@ export class FoundItemService {
       }
 
       const uploadedUrls: string[] = [];
+      const uploadWarnings: string[] = [];
       let firstPublicId = '';
 
       for (const imagePath of imagePaths) {
@@ -75,9 +81,15 @@ export class FoundItemService {
         } catch (error) {
           const msg = error instanceof Error ? error.message : 'Upload error';
           logger.warn(`Image upload failed for found item: ${msg}`);
+          uploadWarnings.push(`Image upload failed: ${msg}`);
         } finally {
           if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
         }
+      }
+
+      // If all uploads failed, reject the creation entirely
+      if (uploadedUrls.length === 0 && imagePaths.length > 0) {
+        throw ApiError.internal('All image uploads failed. Please check your Cloudinary configuration and try again.');
       }
 
       if (uploadedUrls.length > 0) {
@@ -86,12 +98,15 @@ export class FoundItemService {
         itemData.optimizedImageUrl = uploadedUrls[0];
         itemData.thumbnailUrl = uploadedUrls[0].replace('/upload/', '/upload/w_200,h_200,c_thumb/');
       }
+
+      const created = await foundItemRepository.create(itemData);
+      await this.notifyMatchingLostOwners(created);
+      return { item: created, uploadWarnings };
     }
 
-    return foundItemRepository.create(itemData).then(async (created) => {
-      await this.notifyMatchingLostOwners(created);
-      return created;
-    });
+    const created = await foundItemRepository.create(itemData);
+    await this.notifyMatchingLostOwners(created);
+    return { item: created, uploadWarnings: [] };
   }
 
   /**

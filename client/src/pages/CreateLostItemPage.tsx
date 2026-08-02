@@ -32,12 +32,18 @@ export default function CreateLostItemPage() {
 
   const mutation = useMutation({
     mutationFn: (formData: FormData) => lostItemsApi.create(formData),
-    onSuccess: () => {
+    onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['lost-items'] });
-      toast.success('Lost item reported successfully!');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const warnings = (res?.data?.data as any)?.uploadWarnings as string[] | undefined;
+      if (warnings && warnings.length > 0) {
+        toast.success('Lost item reported, but some images failed to upload.');
+      } else {
+        toast.success('Lost item reported successfully!');
+      }
       navigate('/lost-items');
     },
-    onError: () => toast.error('Failed to report lost item'),
+    onError: () => toast.error('Failed to report lost item. If you attached images, please try again.'),
   });
 
   const onSubmit = (data: FormInput) => {

@@ -1,11 +1,13 @@
 import { userRepository } from '../repositories/user.repository';
-import { TRUST_SCORE } from '../constants';
+import { TRUST_SCORE, TRUST_TIERS } from '../constants';
 import { ApiError } from '../utils/ApiError';
 import { logger } from '../utils/logger';
 
 export type TrustScoreAction =
   | 'APPROVED_CLAIM'
   | 'SUCCESSFUL_FOUND_SUBMISSION'
+  | 'ITEM_RECOVERED'
+  | 'FOUND_ITEM_VERIFIED'
   | 'FALSE_CLAIM'
   | 'REJECTED_SPAM'
   | 'DUPLICATE_REPORT';
@@ -13,6 +15,8 @@ export type TrustScoreAction =
 const TRUST_DELTAS: Record<TrustScoreAction, number> = {
   APPROVED_CLAIM: TRUST_SCORE.APPROVED_CLAIM,
   SUCCESSFUL_FOUND_SUBMISSION: TRUST_SCORE.SUCCESSFUL_FOUND_SUBMISSION,
+  ITEM_RECOVERED: TRUST_SCORE.ITEM_RECOVERED,
+  FOUND_ITEM_VERIFIED: TRUST_SCORE.FOUND_ITEM_VERIFIED,
   FALSE_CLAIM: TRUST_SCORE.FALSE_CLAIM,
   REJECTED_SPAM: TRUST_SCORE.REJECTED_SPAM,
   DUPLICATE_REPORT: TRUST_SCORE.DUPLICATE_REPORT,
@@ -57,6 +61,16 @@ export class TrustScoreService {
       throw ApiError.notFound('User not found');
     }
     return user.trustScore;
+  }
+
+  /**
+   * Compute the trust tier label from a numeric score.
+   */
+  getTrustTier(score: number): { label: string; min: number; max: number } {
+    if (score >= TRUST_TIERS.PLATINUM.min) return TRUST_TIERS.PLATINUM;
+    if (score >= TRUST_TIERS.GOLD.min) return TRUST_TIERS.GOLD;
+    if (score >= TRUST_TIERS.SILVER.min) return TRUST_TIERS.SILVER;
+    return TRUST_TIERS.BRONZE;
   }
 }
 

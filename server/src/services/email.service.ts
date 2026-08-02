@@ -79,9 +79,21 @@ export const emailService = {
   },
 
   /**
-   * Notify student that their claim was approved.
+   * Notify student that their claim was approved, with pickup details.
    */
-  sendClaimApproved(to: string, studentName: string, itemTitle: string): void {
+  sendClaimApproved(to: string, studentName: string, itemTitle: string, verificationCode?: string): void {
+    const pickupSection = verificationCode
+      ? `<p><strong>Pickup Details:</strong></p>
+         <ul style="line-height: 2;">
+           <li>Office: Student Affairs Office</li>
+           <li>Building: Block A</li>
+           <li>Room: 105</li>
+           <li>Time: Next business day, 10:00 AM - 4:00 PM</li>
+           <li><strong>Verification Code: ${verificationCode}</strong></li>
+         </ul>
+         <p>Please bring a valid ID and quote your verification code when collecting the item.</p>`
+      : '<p>Please visit the campus lost & found office with your recovery receipt to collect your item.</p>';
+
     sendEmail({
       to,
       subject: `✅ Claim approved for "${itemTitle}"`,
@@ -89,7 +101,7 @@ export const emailService = {
         'Claim Approved! 🎉',
         `<p>Hi ${studentName},</p>
          <p>Great news! Your claim for <strong>${itemTitle}</strong> has been <strong>approved</strong>.</p>
-         <p>Please visit the campus lost & found office with your recovery receipt to collect your item.</p>`
+         ${pickupSection}`
       ),
     });
   },

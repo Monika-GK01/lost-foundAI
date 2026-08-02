@@ -11,12 +11,14 @@ import {
   Image as ImageIcon,
   Sparkles,
   Info,
+  MapPin,
+  KeyRound,
 } from 'lucide-react';
 import { claimsApi, lostItemsApi } from '@/lib/services';
 import { Skeleton } from '@/components/ui/Loading';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { MatchExplanation } from '@/components/ui/MatchExplanation';
-import { timeAgo, formatDate, cn } from '@/lib/utils';
+import { timeAgo, formatDate, cn, getTrustTier } from '@/lib/utils';
 import type { MatchResult } from '@/types';
 import toast from 'react-hot-toast';
 
@@ -196,18 +198,23 @@ export default function AdminClaimReviewPage() {
                 </span>
               </span>
             </p>
-            <p
-              className={cn(
-                'text-lg font-bold',
-                student.trustScore >= 60
-                  ? 'text-green-600'
-                  : student.trustScore >= 30
-                    ? 'text-yellow-600'
-                    : 'text-red-600'
-              )}
-            >
-              {student.trustScore}
-            </p>
+            <div className="flex items-center justify-end gap-2">
+              <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${getTrustTier(student.trustScore).badge}`}>
+                {getTrustTier(student.trustScore).label}
+              </span>
+              <p
+                className={cn(
+                  'text-lg font-bold',
+                  student.trustScore >= 60
+                    ? 'text-green-600'
+                    : student.trustScore >= 30
+                      ? 'text-yellow-600'
+                      : 'text-red-600'
+                )}
+              >
+                {student.trustScore}
+              </p>
+            </div>
           </div>
         )}
       </div>
@@ -325,6 +332,28 @@ export default function AdminClaimReviewPage() {
             {claim.reviewedAt ? timeAgo(claim.reviewedAt) : ''}.
           </p>
           {claim.adminRemarks && <p className="text-sm">Remarks: {claim.adminRemarks}</p>}
+
+          {/* Pickup details shown after approval */}
+          {claim.status === 'APPROVED' && claim.pickupDetails && (
+            <div className="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-900/40 dark:bg-green-900/20">
+              <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-green-700 dark:text-green-400">
+                <MapPin size={14} /> Generated Pickup Details
+              </h4>
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs sm:grid-cols-3">
+                <div><dt className="text-green-600/70 dark:text-green-400/70">Office</dt><dd className="font-medium">{claim.pickupDetails.office}</dd></div>
+                <div><dt className="text-green-600/70 dark:text-green-400/70">Building</dt><dd className="font-medium">{claim.pickupDetails.building}</dd></div>
+                <div><dt className="text-green-600/70 dark:text-green-400/70">Room</dt><dd className="font-medium">{claim.pickupDetails.room}</dd></div>
+                <div><dt className="text-green-600/70 dark:text-green-400/70">Contact</dt><dd className="font-medium">{claim.pickupDetails.contactPerson}</dd></div>
+                <div><dt className="text-green-600/70 dark:text-green-400/70">Time</dt><dd className="font-medium">{claim.pickupDetails.pickupTime}</dd></div>
+                <div>
+                  <dt className="text-green-600/70 dark:text-green-400/70">Code</dt>
+                  <dd className="inline-flex items-center gap-1 font-medium">
+                    <KeyRound size={11} /> {claim.pickupDetails.verificationCode}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          )}
 
           {canRecover && (
             <button

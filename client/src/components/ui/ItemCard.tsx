@@ -33,14 +33,22 @@ export function ItemCard({ item, type, currentUserId, isAdmin, onDelete }: ItemC
 
   return (
     <div className="card group flex flex-col overflow-hidden p-0 transition-all hover:shadow-md">
-      <Link to={detailPath} className="block h-44 w-full bg-gray-100 dark:bg-gray-800">
+      <Link to={detailPath} className="relative block h-44 w-full bg-gray-100 dark:bg-gray-800">
         {item.images?.[0] ? (
-          <img
-            src={item.images[0]}
-            alt={item.title}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-            loading="lazy"
-          />
+          <>
+            <img
+              src={item.images[0]}
+              alt={item.title}
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              loading="lazy"
+              onError={(e) => {
+                const img = e.target as HTMLImageElement;
+                img.style.display = 'none';
+                img.nextElementSibling?.classList.remove('hidden');
+              }}
+            />
+            <div className="hidden h-full items-center justify-center text-sm text-[var(--color-text-secondary)]">No Image</div>
+          </>
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-[var(--color-text-secondary)]">No Image</div>
         )}

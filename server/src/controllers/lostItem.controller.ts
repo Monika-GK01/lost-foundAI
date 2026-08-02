@@ -16,8 +16,8 @@ export const createLostItem = asyncHandler(
       college: req.user!.college,
     };
 
-    const item = await lostItemService.createLostItem(input, imagePaths);
-    sendCreated(res, 'Lost item reported successfully', item);
+    const { item, uploadWarnings } = await lostItemService.createLostItem(input, imagePaths);
+    sendCreated(res, 'Lost item reported successfully', { ...item.toObject(), uploadWarnings });
   }
 );
 
@@ -106,5 +106,22 @@ export const checkDuplicates = asyncHandler(
       collegeId: req.user!.college,
     });
     sendOk(res, 'Duplicate check complete', { duplicates, hasDuplicates: duplicates.length > 0 });
+  }
+);
+
+export const matchAction = asyncHandler(
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const { foundItemId, action } = req.body;
+    if (!foundItemId || !['accept', 'ignore'].includes(action)) {
+      res.status(400).json({ success: false, message: 'foundItemId and action (accept|ignore) are required' });
+      return;
+    }
+    const updated = await lostItemService.matchAction(
+      req.params.id,
+      req.user!.userId,
+      foundItemId,
+      action
+    );
+    sendOk(res, `Match ${action}ed successfully`, updated);
   }
 );

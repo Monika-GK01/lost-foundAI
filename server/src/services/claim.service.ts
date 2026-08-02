@@ -240,6 +240,15 @@ export class ClaimService {
       'your claimed item'
     );
 
+    // Trust score: reward student for physical recovery
+    await trustScoreService.adjustScore(claim.student.toString(), 'ITEM_RECOVERED');
+
+    // Trust score: reward finder for successful found submission
+    const foundItemForRecovery = await foundItemRepository.findById(claim.foundItem.toString());
+    if (foundItemForRecovery) {
+      await trustScoreService.adjustScore(foundItemForRecovery.finder.toString(), 'FOUND_ITEM_VERIFIED');
+    }
+
     await auditLogService.log({
       performedBy: adminId,
       action: AUDIT_ACTIONS.ITEM_RECOVERED,
@@ -307,13 +316,32 @@ export class ClaimService {
     remarks: string,
     now: Date
   ): Promise<IClaim> {
-    // Update claim status
+    // Generate pickup details
+    const verificationCode = `LF-${Math.floor(1000 + Math.random() * 9000)}`;
+    const nextDay = new Date(now);
+    nextDay.setDate(nextDay.getDate() + 1);
+    // Skip weekends
+    if (nextDay.getDay() === 0) nextDay.setDate(nextDay.getDate() + 1);
+    if (nextDay.getDay() === 6) nextDay.setDate(nextDay.getDate() + 2);
+    const pickupTime = `${nextDay.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}, 10:00 AM - 4:00 PM`;
+
+    const pickupDetails = {
+      office: 'Student Affairs Office',
+      building: 'Block A',
+      room: '105',
+      contactPerson: 'Campus Admin',
+      pickupTime,
+      verificationCode,
+    };
+
+    // Update claim status with pickup details
     const updated = await claimRepository.update(claim._id.toString(), {
       status: CLAIM_STATUS.APPROVED,
       adminRemarks: remarks,
       reviewedBy: new mongoose.Types.ObjectId(adminId),
       reviewedAt: now,
       recoveryTimestamp: now,
+      pickupDetails,
     });
 
     if (!updated) {
@@ -333,7 +361,7 @@ export class ClaimService {
 
     // Notifications
     const studentId = claim.student.toString();
-    await notificationService.notifyClaimApproved(studentId, 'your claimed item');
+    await notificationService.notifyClaimApproved(studentId, 'your claimed item', verificationCode);
 
     // Notify finder that item was recovered
     const foundItem = await foundItemRepository.findById(claim.foundItem.toString());
@@ -419,6 +447,12 @@ export class ClaimService {
 
     // Trust score: penalize for false claim
     await trustScoreService.adjustScore(claim.student.toString(), 'FALSE_CLAIM');
+
+    // Additional penalty if admin remarks indicate fraud
+    const lowerRemarks = remarks.toLowerCase();
+    if (lowerRemarks.includes('fraudulent') || lowerRemarks.includes('fake')) {
+      await trustScoreService.adjustScore(claim.student.toString(), 'REJECTED_SPAM');
+    }
 
     // Notification
     await notificationService.notifyClaimRejected(

@@ -12,6 +12,7 @@ export interface MatchScoreBreakdown {
   dateScore: number;
   overallScore: number;
   explanation: string[];
+  summary: string;
 }
 
 export interface RankedMatch {
@@ -56,11 +57,11 @@ export class MatchEngineService {
       ? MATCH_WEIGHTS
       : {
           IMAGE_SIMILARITY: 0,
-          TITLE_MATCH: 0.30,
+          TITLE_MATCH: 0.15,
           BRAND_MATCH: 0.20,
           COLOR_MATCH: 0.20,
-          CATEGORY_MATCH: 0.15,
-          LOCATION_MATCH: 0.05,
+          CATEGORY_MATCH: 0.25,
+          LOCATION_MATCH: 0.10,
           DATE_PROXIMITY: 0.10,
         };
 
@@ -83,6 +84,18 @@ export class MatchEngineService {
       dateScore
     );
 
+    const summary = this.buildSummary(
+      lostItem,
+      foundItem,
+      imageSimilarity,
+      brandScore,
+      colorScore,
+      categoryScore,
+      locationScore,
+      dateScore,
+      overallScore
+    );
+
     return {
       imageScore: Math.round(imageSimilarity * 100) / 100,
       titleScore: Math.round(titleScore * 100) / 100,
@@ -93,6 +106,7 @@ export class MatchEngineService {
       dateScore: Math.round(dateScore * 100) / 100,
       overallScore: Math.round(overallScore * 100) / 100,
       explanation,
+      summary,
     };
   }
 
@@ -110,9 +124,9 @@ export class MatchEngineService {
       return { foundItem, scores };
     });
 
-    // Filter out zero-score matches and sort by score descending
+    // Filter out low-score matches and sort by score descending
     return ranked
-      .filter((m) => m.scores.overallScore > 0)
+      .filter((m) => m.scores.overallScore >= MATCH_CONFIG.MINIMUM_OVERALL_SCORE)
       .sort((a, b) => b.scores.overallScore - a.scores.overallScore)
       .slice(0, MATCH_CONFIG.DEFAULT_TOP_K);
   }
@@ -238,6 +252,67 @@ export class MatchEngineService {
     else if (dateScore > 0.3) parts.push('Reasonable date proximity');
 
     return parts;
+  }
+
+  /**
+   * Build a single cohesive natural-language summary for a match.
+   */
+  private buildSummary(
+    lostItem: LostItemData,
+    foundItem: IFoundItem,
+    imageScore: number,
+    brandScore: number,
+    colorScore: number,
+    categoryScore: number,
+    locationScore: number,
+    dateScore: number,
+    overallScore: number
+  ): string {
+    const parts: string[] = [];
+
+    // Describe the items
+    const color = lostItem.color || foundItem.color;
+    const brand = lostItem.brand || foundItem.brand;
+    const itemDesc = [
+      color ? color.toLowerCase() : '',
+      brand ? brand : '',
+      lostItem.category ? lostItem.category.toLowerCase() : 'item',
+    ].filter(Boolean).join(' ');
+
+    parts.push(`Both items appear to be ${itemDesc}`);
+
+    // Date proximity
+    if (dateScore > 0.7) {
+      const diffDays = Math.abs(
+        (new Date(foundItem.dateFound).getTime() - new Date(lostItem.dateLost).getTime()) / (1000 * 60 * 60 * 24)
+      );
+      parts.push(`reported within ${Math.max(1, Math.round(diffDays))} day${Math.round(diffDays) !== 1 ? 's' : ''} of each other`);
+    }
+
+    // Location
+    if (locationScore > 0.5 && lostItem.location) {
+      parts.push(`in ${lostItem.location}`);
+    }
+
+    let sentence = parts.join(' ') + '.';
+
+    // Add image similarity
+    if (imageScore > 0.4) {
+      sentence += ` Image similarity is ${Math.round(imageScore * 100)}%.`;
+    }
+
+    // Add brand/category match info
+    if (brandScore === 1 && categoryScore === 1) {
+      sentence += ' Brand and category match perfectly.';
+    } else if (brandScore === 1) {
+      sentence += ' Brand matches exactly.';
+    } else if (categoryScore === 1) {
+      sentence += ' Same category.';
+    }
+
+    sentence += ` Overall confidence: ${Math.round(overallScore * 100)}%.`;
+
+    return sentence;
   }
 }
 

@@ -72,15 +72,16 @@ export class NotificationService {
     if (user) emailService.sendClaimSubmitted(user.email, user.name, user.name, itemTitle);
   }
 
-  async notifyClaimApproved(studentId: string, itemTitle: string): Promise<void> {
+  async notifyClaimApproved(studentId: string, itemTitle: string, verificationCode?: string): Promise<void> {
+    const codeInfo = verificationCode ? ` Your verification code is ${verificationCode}.` : '';
     await this.create({
       recipient: studentId,
       title: 'Claim Approved',
-      message: `Your claim for "${itemTitle}" has been approved. The item is now marked as recovered.`,
+      message: `Your claim for "${itemTitle}" has been approved. The item is now marked as recovered.${codeInfo}`,
       type: NOTIFICATION_TYPE.CLAIM_APPROVED,
     });
     const user = await userRepository.findById(studentId);
-    if (user) emailService.sendClaimApproved(user.email, user.name, itemTitle);
+    if (user) emailService.sendClaimApproved(user.email, user.name, itemTitle, verificationCode);
   }
 
   async notifyClaimRejected(studentId: string, itemTitle: string, remarks: string): Promise<void> {

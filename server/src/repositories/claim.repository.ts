@@ -49,8 +49,8 @@ export class ClaimRepository {
     const [claims, total] = await Promise.all([
       Claim.find(query)
         .populate('student', 'name email trustScore')
-        .populate('lostItem', 'title category brand color')
-        .populate('foundItem', 'title category brand color')
+        .populate('lostItem', 'title category brand color images')
+        .populate('foundItem', 'title category brand color images')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)

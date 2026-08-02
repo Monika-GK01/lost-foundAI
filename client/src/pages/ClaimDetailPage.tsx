@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Clock, CheckCircle, XCircle, AlertCircle, MapPin, KeyRound } from 'lucide-react';
 import { claimsApi } from '@/lib/services';
 import { Skeleton } from '@/components/ui/Loading';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -107,6 +107,38 @@ export default function ClaimDetailPage() {
           ))}
         </div>
       </div>
+
+      {/* Pickup Information */}
+      {claim.status === 'APPROVED' && claim.pickupDetails && (
+        <div className="card border-l-4 border-l-green-500">
+          <h3 className="mb-3 flex items-center gap-2 font-semibold text-green-700 dark:text-green-400">
+            <MapPin size={16} /> Pickup Information
+          </h3>
+          <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+            <div>
+              <dt className="text-[var(--color-text-secondary)]">Office</dt>
+              <dd className="font-medium">{claim.pickupDetails.office}</dd>
+            </div>
+            <div>
+              <dt className="text-[var(--color-text-secondary)]">Building / Room</dt>
+              <dd className="font-medium">{claim.pickupDetails.building}, Room {claim.pickupDetails.room}</dd>
+            </div>
+            <div>
+              <dt className="text-[var(--color-text-secondary)]">Contact Person</dt>
+              <dd className="font-medium">{claim.pickupDetails.contactPerson}</dd>
+            </div>
+            <div>
+              <dt className="text-[var(--color-text-secondary)]">Pickup Time</dt>
+              <dd className="font-medium">{claim.pickupDetails.pickupTime}</dd>
+            </div>
+          </dl>
+          <div className="mt-4 flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2 dark:bg-green-900/20">
+            <KeyRound size={16} className="text-green-600" />
+            <span className="text-sm text-green-700 dark:text-green-300">Verification Code:</span>
+            <span className="rounded bg-green-600 px-2 py-0.5 font-mono text-sm font-bold text-white">{claim.pickupDetails.verificationCode}</span>
+          </div>
+        </div>
+      )}
 
       {/* Admin Remarks */}
       {claim.adminRemarks && (

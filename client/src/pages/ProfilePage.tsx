@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Lock, Package, Search, FileText, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usersApi, authApi, claimsApi, lostItemsApi, foundItemsApi } from '@/lib/services';
-import { getInitials, formatDate } from '@/lib/utils';
+import { getInitials, formatDate, getTrustTier } from '@/lib/utils';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import toast from 'react-hot-toast';
 
@@ -124,7 +124,12 @@ export default function ProfilePage() {
       <div className="card">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-[var(--color-text-secondary)]">Trust Score</span>
-          <span className="text-2xl font-bold text-primary-600">{user.trustScore}</span>
+          <div className="flex items-center gap-2">
+            <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${getTrustTier(user.trustScore).badge}`}>
+              {getTrustTier(user.trustScore).label}
+            </span>
+            <span className="text-2xl font-bold text-primary-600">{user.trustScore}</span>
+          </div>
         </div>
         <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
           <div className="h-full rounded-full bg-primary-600 transition-all" style={{ width: `${user.trustScore}%` }} />

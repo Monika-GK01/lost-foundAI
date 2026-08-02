@@ -8,11 +8,11 @@ class Settings(BaseSettings):
     port: int = 8000
 
     # OpenCLIP Model Configuration
-    clip_model_name: str = "ViT-B-32"
-    clip_pretrained: str = "laion2b_s34b_b79k"
+    clip_model_name: str = "ViT-L-14"
+    clip_pretrained: str = "laion2b_s32b_b82k"
 
     # Embedding Configuration
-    embedding_dim: int = 512
+    embedding_dim: int = 768
     image_size: int = 224
 
     # Matching Configuration

@@ -10,6 +10,7 @@ export interface User {
   rollNumber: string;
   phone: string;
   trustScore: number;
+  trustTier?: string;
   emailVerified: boolean;
   isActive: boolean;
   lastLogin: string | null;
@@ -75,6 +76,15 @@ export interface VerificationAnswer {
   answer: string;
 }
 
+export interface PickupDetails {
+  office: string;
+  building: string;
+  room: string;
+  contactPerson: string;
+  pickupTime: string;
+  verificationCode: string;
+}
+
 export interface Claim {
   _id: string;
   student: { _id: string; name: string; email: string; trustScore: number; profileImage?: string } | string;
@@ -88,6 +98,7 @@ export interface Claim {
   reviewedBy: { _id: string; name: string; email: string } | null;
   reviewedAt: string | null;
   recoveryTimestamp: string | null;
+  pickupDetails: PickupDetails | null;
   aiMatchScore: number;
   createdAt: string;
   updatedAt: string;
@@ -115,6 +126,7 @@ export interface MatchResult {
     dateScore: number;
     overallScore: number;
     explanation: string[];
+    summary: string;
   };
 }
 

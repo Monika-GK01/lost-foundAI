@@ -7,6 +7,7 @@ import {
   deleteLostItem,
   getLostItemMatches,
   checkDuplicates,
+  matchAction,
 } from '../controllers/lostItem.controller';
 import { authenticate, collegeIsolation, validate } from '../middlewares';
 import { createLostItemSchema, updateLostItemSchema } from '../validators/lostItem.validator';
@@ -161,6 +162,32 @@ router.delete('/:id', collegeIsolation, deleteLostItem);
  *       200: { description: Ranked list of matching found items with scores }
  */
 router.get('/:id/matches', collegeIsolation, getLostItemMatches);
+
+/**
+ * @swagger
+ * /lost-items/{id}/match-action:
+ *   post:
+ *     tags: [Lost Items]
+ *     summary: Accept or ignore a match suggestion
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [foundItemId, action]
+ *             properties:
+ *               foundItemId: { type: string }
+ *               action: { type: string, enum: [accept, ignore] }
+ *     responses:
+ *       200: { description: Match action applied }
+ */
+router.post('/:id/match-action', matchAction);
 
 /**
  * @swagger
