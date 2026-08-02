@@ -1,5 +1,6 @@
 import axios from 'axios';
 import fs from 'fs';
+import path from 'path';
 import { env } from '../config/env';
 import { logger } from './logger';
 
@@ -25,18 +26,22 @@ export interface MatchResultItem {
 
 /**
  * Call AI service to generate an embedding from an image file.
+ * Reads the file as a Buffer and sends via native FormData (Node 18+).
+ * Does NOT manually set Content-Type so axios auto-generates the boundary.
  */
 export const generateEmbedding = async (
   filePath: string
 ): Promise<EmbeddingResult> => {
   try {
-    const fileStream = fs.createReadStream(filePath);
-    const formData = new FormData();
-    formData.append('file', fileStream);
+    const fileBuffer = fs.readFileSync(filePath);
+    const fileName = path.basename(filePath);
+    const blob = new Blob([fileBuffer], { type: 'image/jpeg' });
 
-    const response = await aiClient.post('/generate-embedding', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    const formData = new FormData();
+    formData.append('file', blob, fileName);
+
+    // Let axios set Content-Type automatically (includes multipart boundary)
+    const response = await aiClient.post('/generate-embedding', formData);
 
     logger.info('Embedding generated via AI service');
     return {

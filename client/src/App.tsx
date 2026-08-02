@@ -8,6 +8,7 @@ import { LoadingSpinner } from '@/components/ui/Loading';
 // Lazy-loaded pages
 const LandingPage = lazy(() => import('@/pages/LandingPage'));
 const LoginPage = lazy(() => import('@/pages/LoginPage'));
+const AdminLoginPage = lazy(() => import('@/pages/AdminLoginPage'));
 const RegisterPage = lazy(() => import('@/pages/RegisterPage'));
 const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'));
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
@@ -52,7 +53,7 @@ function ProtectedRoute() {
 function AdminRoute() {
   const { user, isLoading } = useAuth();
   if (isLoading) return <PageLoader />;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/admin/login" replace />;
   if (user.role === 'STUDENT') return <Navigate to="/unauthorized" replace />;
   return <Outlet />;
 }
@@ -76,6 +77,7 @@ export default function App() {
             <Route path="/register" element={<RegisterPage />} />
           </Route>
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route path="/unauthorized" element={<UnauthorizedPage />} />
           <Route path="*" element={<NotFoundPage />} />
 

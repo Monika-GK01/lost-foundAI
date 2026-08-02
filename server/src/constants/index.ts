@@ -99,6 +99,7 @@ export const ITEM_CATEGORIES = [
   'ID_CARDS',
   'JEWELRY',
   'SPORTS',
+  'DOCUMENTS',
   'OTHER',
 ] as const;
 

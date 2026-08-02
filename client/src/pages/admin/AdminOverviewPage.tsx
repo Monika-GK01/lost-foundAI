@@ -10,6 +10,11 @@ import {
   TrendingUp,
   Sparkles,
   FileText,
+  ShieldCheck,
+  Zap,
+  UserPlus,
+  BarChart3,
+  Bell,
 } from 'lucide-react';
 import { adminApi, claimsApi } from '@/lib/services';
 import { Skeleton } from '@/components/ui/Loading';
@@ -51,6 +56,22 @@ export default function AdminOverviewPage() {
         <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
           Campus lost & found activity at a glance.
         </p>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="flex flex-wrap gap-3">
+        <Link to="/admin/claims?status=PENDING" className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700">
+          <Zap size={14} /> Review Claims
+        </Link>
+        <Link to="/admin/users" className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-50 dark:hover:bg-gray-800">
+          <UserPlus size={14} /> Manage Users
+        </Link>
+        <Link to="/admin/reports" className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-50 dark:hover:bg-gray-800">
+          <BarChart3 size={14} /> Reports
+        </Link>
+        <Link to="/notifications" className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-50 dark:hover:bg-gray-800">
+          <Bell size={14} /> Notifications
+        </Link>
       </div>
 
       {/* Stat cards */}
@@ -101,6 +122,20 @@ export default function AdminOverviewPage() {
                 <Users size={20} className="mx-auto text-primary-600" />
                 <p className="mt-2 text-xl font-bold">{a?.totalUsers ?? 0}</p>
                 <p className="text-xs text-[var(--color-text-secondary)]">Registered Users</p>
+              </div>
+              <div className="rounded-xl bg-gray-50 p-4 text-center dark:bg-gray-800/50">
+                <ShieldCheck size={20} className="mx-auto text-primary-600" />
+                <p className="mt-2 text-xl font-bold">
+                  {a?.trustScoreDistribution?.length
+                    ? `${Math.round(a.trustScoreDistribution.reduce((sum, d) => sum + d.count, 0) / (a.totalUsers || 1))}`
+                    : '—'}
+                </p>
+                <p className="text-xs text-[var(--color-text-secondary)]">Trust Distribution</p>
+              </div>
+              <div className="rounded-xl bg-gray-50 p-4 text-center dark:bg-gray-800/50">
+                <Sparkles size={20} className="mx-auto text-primary-600" />
+                <p className="mt-2 text-xl font-bold">{a?.averageMatchScore ?? 0}%</p>
+                <p className="text-xs text-[var(--color-text-secondary)]">AI Match Avg</p>
               </div>
             </div>
           </div>
