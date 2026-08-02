@@ -72,6 +72,15 @@ export function Navbar() {
             {isDark ? <Sun size={18} /> : <Moon size={18} />}
           </button>
 
+          {!user && (
+            <Link
+              to="/admin/login"
+              className="hidden items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 sm:inline-flex"
+            >
+              <ShieldCheck size={14} /> Admin
+            </Link>
+          )}
+
           {user && (
             <>
               <NotificationDropdown />
