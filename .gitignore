@@ -1,5 +1,17 @@
-node_modules/
-dist/
-.env
-*.log
-uploads/
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# AI service
+ai-service/venv/
+ai-service/**/__pycache__/
+
+# HuggingFace cache (optional)
+.cache/
